@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Base {
+  id        String   @id @default(cuid())
+  name      String   // Name of the base
+  authorId  String   // Clerk user ID
+  createdAt DateTime @default(now())
+  tables    Table[]  // Relation to tables in this base
+}
+
+model Table {
+  id        String   @id @default(cuid())
+  name      String   // Name of the table
+  baseId    String   // Foreign key to the base
+  createdAt DateTime @default(now())
+  rows      Row[]    // Relation to rows in this table
+  columns   Column[]  // Relation to columns in this table
+  cells     Cell[] // Relation to cells in this table
+  views     View[]       // Relation to views in this table
+  base      Base     @relation(fields: [baseId], references: [id], onDelete: Cascade) // Relation to the Base model
+}
+
+model Row {
+  id        String   @id @default(cuid())
+  tableId   String   // Foreign key to the table
+  createdAt DateTime @default(now())
+  rowOrder  Int
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade) // Relation to the Table model
+  cells     Cell[]   // Relation to the Cell model
+}
+
+model Column {
+  id        String   @id @default(cuid())
+  tableId   String   // Foreign key to the table
+  name      String   // Name of the column
+  createdAt DateTime @default(now())
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade) // Relation to the Table model
+  type      String   
+  cells     Cell[]   // Relation to the Cell model
+}
+
+model Cell {
+  id        String   @id @default(cuid())
+  tableId   String
+  rowId     String   // Foreign key to the Row model
+  columnId  String   // Foreign key to the Column model
+  stringValue  String?   // Value of the cell
+  intValue  Int?
+  createdAt DateTime @default(now())
+
+  // Relations
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  row       Row      @relation(fields: [rowId], references: [id], onDelete: Cascade)
+  column    Column   @relation(fields: [columnId], references: [id], onDelete: Cascade)
+
+  @@unique([rowId, columnId]) // Ensure that a cell is unique for a specific row and column
+}
+
+model View {
+  id        String   @id @default(cuid())
+  name      String   // Name of the view
+  filterState Json[]
+  sorterState Json[]
+  tableId    String   // Foreign key to the base
+  createdAt DateTime @default(now())
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+}
