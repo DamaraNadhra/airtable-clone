@@ -48,6 +48,8 @@ model Column {
   table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade) // Relation to the Table model
   type      String   
   cells     Cell[]   // Relation to the Cell model
+  icon      String
+  priority  String
 }
 
 model Cell {
@@ -74,5 +76,6 @@ model View {
   sorterState Json[]
   tableId    String   // Foreign key to the base
   createdAt DateTime @default(now())
+  searchTerm  String
   table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
 }

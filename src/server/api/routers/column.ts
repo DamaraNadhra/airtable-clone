@@ -22,15 +22,20 @@ export const columnRouter = createTRPCRouter({
         name: z.string(),
         id: z.string().optional(),
         type: z.string(),
+        iconName: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const defaultIcon =
+        input.type === "string" ? "LuLetterText" : "AiOutlineNumber";
       const response = await ctx.db.column.create({
         data: {
           name: input.name,
           tableId: input.tableId,
           id: input.id,
           type: input.type,
+          icon: input.iconName ?? defaultIcon,
+          priority: "secondary",
         },
       });
       const rows = await ctx.db.row.findMany({

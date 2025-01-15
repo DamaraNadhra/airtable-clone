@@ -21,7 +21,7 @@ import { RxHamburgerMenu } from "react-icons/rx";
 import { VscTable } from "react-icons/vsc";
 import { PiCalendar, PiPlus, PiUsersThree } from "react-icons/pi";
 import { IoFilterOutline } from "react-icons/io5";
-import type { Base, Table, View } from "@prisma/client";
+import type { Base, Table } from "@prisma/client";
 import { TbArrowsSort } from "react-icons/tb";
 import { AiOutlineGroup } from "react-icons/ai";
 import { PiPaintBucket } from "react-icons/pi";
@@ -33,7 +33,12 @@ import { HiMagnifyingGlass } from "react-icons/hi2";
 import { RiGalleryView2 } from "react-icons/ri";
 import { PiKanban } from "react-icons/pi";
 import { FaRegListAlt } from "react-icons/fa";
-import { FaChartGantt, FaWpforms } from "react-icons/fa6";
+import {
+  FaChartGantt,
+  FaChevronDown,
+  FaRegStar,
+  FaWpforms,
+} from "react-icons/fa6";
 import { TablePopUp } from "~/components/TablePopUp";
 import { GoGear } from "react-icons/go";
 import { BasePopUp } from "~/components/BasePopUp";
@@ -44,8 +49,10 @@ import { FilterPopUp } from "~/components/FilterPopUp";
 import { SortPopUp } from "~/components/SortPopUp";
 import { SearchPopUp } from "~/components/SearchPopUp";
 import { useDebounce } from "use-debounce";
-import type { SortObject } from "~/helpers/types";
+import type { SortObject, ViewObj } from "~/helpers/types";
 import { TableView } from "~/components/TableView";
+import { ViewPopUp } from "~/components/ViewPopUp";
+import { getIconComponent } from "~/helpers/getIconComponent";
 
 const columnHelper = createColumnHelper<Record<string, string>>();
 
@@ -59,20 +66,12 @@ type FilterObj = {
   columnType: string;
   id: string;
 };
-type ViewObj =
-  | {
-      id: string;
-      name: string;
-      filterState?: Record<string, string>[];
-      sorterState?: Record<string, string>[];
-      tableId: string;
-    }
-  | View;
 
 interface ViewsListProps {
   name: string;
   id: string;
   tableId: string;
+  isRenaming: boolean;
   setCurrentView: React.Dispatch<React.SetStateAction<string | undefined>>;
   setViewState: React.Dispatch<React.SetStateAction<ViewObj[]>>;
   currentViewId: string;
@@ -84,19 +83,49 @@ const ViewsList = ({
   id,
   tableId,
   setCurrentView,
+  isRenaming,
   setViewState,
   currentViewId,
   viewState,
 }: ViewsListProps) => {
   const isActive = (id: string) => currentViewId === id;
+  const { mutate: updateView } = api.views.update.useMutation();
+  const [currentName, setCurrentName] = useState<string>("");
+  useEffect(() => {
+    setCurrentName(name);
+  }, [viewState, name]);
   return (
     <div
-      className={`flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] ${isActive(id) ? "bg-[#C4ECFFB3]" : "bg-white"} px-2 py-2 text-[12.5px] font-[500] hover:bg-[#c4ecffbf] hover:bg-opacity-20`}
+      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[3px] ${isActive(id) ? "bg-[#C4ECFFB3]" : "bg-white hover:bg-[#f2f2f2]"} group px-2 py-2 text-[12.5px] font-[500]`}
     >
-      <div>
+      <div className="w-5 group-hover:hidden">
         <VscTable className="text-[#166EE1]" size={17} />
       </div>
-      <span>{name}</span>
+      <div className="hidden w-5 group-hover:flex">
+        <FaRegStar size={16} />
+      </div>
+      {isRenaming ? (
+        <input
+          className="w-full text-[13px]"
+          value={currentName}
+          onChange={(e) => {
+            setCurrentName(e.target.value);
+            console.log(name);
+          }}
+          onBlur={() => {
+            setViewState((prev) => {
+              return prev.map((view) =>
+                view.id === id
+                  ? { ...view, isRenaming: false, name: currentName }
+                  : view,
+              );
+            });
+            updateView({ id, newName: currentName });
+          }}
+        />
+      ) : (
+        <span>{name}</span>
+      )}
     </div>
   );
 };
@@ -192,6 +221,8 @@ const ViewLayout: NextPage = () => {
   const [searchPopUpState, setSearchPopUpState] = useState<boolean>(false);
   const [currentView, setCurrentView] = useState<string>();
   const [popUpId, setPopUpId] = useState<string>("");
+  const [selectedViewId, setSelectedViewId] = useState<string>("");
+  const [viewPopUpModalOpen, setViewPopUpModalOpen] = useState<boolean>(false);
   const [debouncedSearchTerm] = useDebounce(searchState, 400);
   const openPopup = () => setIsOpen(true);
   const closePopup = () => setIsOpen(false);
@@ -203,26 +234,27 @@ const ViewLayout: NextPage = () => {
   });
   const { data: viewsData, isLoading: loadingViews } =
     api.views.getALl.useQuery({ tableId });
-  const {
-    data: currentViewData,
-    refetch: refetchView,
-    isLoading: loadingCurrentView,
-  } = api.views.getById.useQuery({ id: viewId });
+  const { data: currentViewData, isLoading: loadingCurrentView } =
+    api.views.getById.useQuery({ id: viewId });
   const { data: baseData, isLoading: loadingBaseData } =
     api.base.getBaseById.useQuery({ baseId });
   const { data: tables, isLoading: loadingTablesData } =
     api.table.getAllTablesByBaseId.useQuery({ baseId });
+  const { mutate: updateView } = api.views.update.useMutation();
   const { data: columnData, isLoading: loadingColumnData } =
     api.columns.getAll.useQuery({ tableId });
   const [currentBase, setCurrentBase] = useState<Base | Record<string, string>>(
     fetchedBase ? (JSON.parse(fetchedBase as string) as Base) : {},
   );
+
   useEffect(() => {
     if (viewsState.length > 0) {
       const currentViewObj = viewsState.find((v) => v.id === currentView);
-      console.log(currentViewObj);
-      setFilters(currentViewObj?.filterState as FilterObj[]);
-      setSorters(currentViewObj?.sorterState as SortObject[]);
+      if (currentViewObj) {
+        setFilters(currentViewObj.filterState as FilterObj[]);
+        setSorters(currentViewObj.sorterState as SortObject[]);
+        setSearchState(currentViewObj.searchTerm);
+      }
     }
   }, [viewsState, currentView]);
   useEffect(() => {
@@ -245,7 +277,9 @@ const ViewLayout: NextPage = () => {
       setCurrentView(currentViewData.id);
     }
   }, [currentViewData]);
-
+  useEffect(() => {
+    updateView({ id: currentView!, searchTerm: debouncedSearchTerm });
+  }, [debouncedSearchTerm, currentView]);
   const {
     data: rowsData,
     fetchNextPage,
@@ -287,7 +321,6 @@ const ViewLayout: NextPage = () => {
       setLoadingViewsState(false);
     }
   }, [loadingViews, loadingCurrentView]);
-  const { data: rowz } = api.cells.getAllByTableId.useQuery({ tableId });
 
   const { mutate: newRow } = api.rows.create.useMutation({
     onSuccess: () => {
@@ -295,7 +328,6 @@ const ViewLayout: NextPage = () => {
     },
   });
   const { mutate: updateCell } = api.cells.update.useMutation();
-
   const { mutate: createTable } = api.table.create.useMutation({
     onSuccess: ({ table, viewId }) => {
       toast.success("Successfully created table");
@@ -307,7 +339,6 @@ const ViewLayout: NextPage = () => {
       void router.push(`/${baseId}/${tableId}/${createdView.id}`);
     },
   });
-  type RowFields = Record<string, string>;
 
   const flattenedRows = useMemo(
     () =>
@@ -357,8 +388,10 @@ const ViewLayout: NextPage = () => {
   useEffect(() => {
     fetchMoreOnBottomReached(tableContainerRef.current);
   }, [fetchMoreOnBottomReached]);
+  type MetaType = {
+    icon?: string;
+  };
 
-  // Ensure that hooks are not conditionally used
   useEffect(() => {
     if (!loadingColumnData && columnData) {
       const updatedColumns = columnData.map((column) => {
@@ -366,6 +399,10 @@ const ViewLayout: NextPage = () => {
           header: column.name,
           cell: (info) => info.getValue(),
           id: column.id,
+          size: 180,
+          meta: {
+            icon: column.icon,
+          },
         });
       });
       setColumns(updatedColumns);
@@ -396,7 +433,7 @@ const ViewLayout: NextPage = () => {
   const { rows } = table.getRowModel();
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
-    estimateSize: () => 33, //estimate row height for accurate scrollbar dragging
+    estimateSize: () => 32, //estimate row height for accurate scrollbar dragging
     getScrollElement: () => tableContainerRef.current,
     //measure dynamic row height
     measureElement:
@@ -421,51 +458,53 @@ const ViewLayout: NextPage = () => {
             id="topbar"
             className="flex h-[56px] w-full flex-row items-center justify-between bg-[#007da1]"
           >
-            <div className="flex h-[24px] w-[24px] flex-row items-center justify-between gap-2 pl-4 text-white">
-              <div
-                id="icon-container"
-                className="group flex cursor-pointer p-1"
-              >
+            <div className="flex h-[24px] w-auto flex-row items-center justify-between gap-2 pl-4 text-white">
+              <div className="flex flex-row justify-normal gap-[1px]">
                 <div
-                  className="hidden rounded-full bg-white p-[6px] opacity-0 transition-opacity duration-300 group-hover:flex group-hover:opacity-100"
-                  onClick={() => {
-                    void router.push("/");
+                  id="icon-container"
+                  className="group ml-[1px] mt-[3px] flex h-[32px] w-[32px] cursor-pointer p-1"
+                >
+                  <div
+                    className="hidden rounded-full bg-white p-[6px] opacity-0 transition-opacity duration-300 group-hover:flex group-hover:opacity-100"
+                    onClick={() => {
+                      void router.push("/");
+                    }}
+                  >
+                    <FiArrowLeft className="text-[#007da1]" size={12} />
+                  </div>
+                  <div className="group-hover:hidden">
+                    <SiAirtable size={21} />
+                  </div>
+                </div>
+                <div
+                  className="flex cursor-pointer flex-row items-center justify-between gap-2 pl-2"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const element = e.currentTarget;
+                    const rect = element.getBoundingClientRect();
+                    setMousePosition({ x: rect.left, y: rect.bottom });
+                    setBaseModalOpen(true);
                   }}
                 >
-                  <FiArrowLeft className="text-[#007da1]" size={12} />
-                </div>
-                <div className="group-hover:hidden">
-                  <SiAirtable size={21} />
-                </div>
-              </div>
-              <div
-                className="flex cursor-pointer flex-row items-center justify-between gap-2 pl-2"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const element = e.currentTarget;
-                  const rect = element.getBoundingClientRect();
-                  setMousePosition({ x: rect.left, y: rect.bottom });
-                  setBaseModalOpen(true);
-                }}
-              >
-                <span className="text-[17px] font-semibold">
-                  {currentBase?.name}
-                </span>
-                <div>
-                  <IoChevronDownSharp size={13} />
+                  <span className="text-[17px] font-semibold">
+                    {currentBase?.name}
+                  </span>
+                  <div>
+                    <IoChevronDownSharp size={13} />
+                  </div>
                 </div>
               </div>
-              <div className="ml-2 cursor-default rounded-full border-[1px] border-[#1b6074] bg-[#006a89] px-[11px] py-[4px] text-[12.5px] text-gray-200 shadow-inner hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="ml-2 cursor-default rounded-full border-[1px] border-[#1b6074] bg-[#006a89] px-[11px] py-[4px] text-[12.5px] text-gray-200 text-opacity-95 shadow-inner hover:bg-cyan-800 hover:bg-opacity-40">
                 Data
               </div>
-              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12px] text-gray-200 hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12.5px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
                 Automations
               </div>
-              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12px] text-gray-200 hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12.5px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
                 Interfaces
               </div>
-              <div className="h-5 border-r border-slate-300 border-opacity-25"></div>
-              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12px] text-gray-200 hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="h-5 border-r border-slate-300 border-opacity-30"></div>
+              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12.5px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
                 Forms
               </div>
             </div>
@@ -513,13 +552,14 @@ const ViewLayout: NextPage = () => {
                 <div>
                   <FiPlus size={18} className="" />
                 </div>
-                <span className="-mb-1 text-[13px]">Add or import</span>
+                <span className="-mb-[1px] text-[12.5px]">Add or import</span>
               </button>
             </div>
           </div>
         </div>
         <div className="mt-[32px]">
           <div className="relative">
+            <div className="absolute left-0 right-0 top-[44px] z-0 h-[32px] w-full bg-white"></div>
             <div
               id="view-bar-container"
               className="absolute left-0 right-0 top-0 flex h-[44px] w-full flex-none flex-row justify-between border-b bg-white text-black"
@@ -539,7 +579,7 @@ const ViewLayout: NextPage = () => {
                   </>
                 ) : (
                   <>
-                    <div className="w-[1px] border-r-[1px] border-black"></div>
+                    <div className="h-5 w-[1px] border-r-[1px] border-black opacity-30"></div>
                     <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-sm px-2 py-1 text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
                       <VscTable className="text-[#166EE1]" size={17} />
                       <span className="ml-1">Grid view</span>
@@ -551,7 +591,7 @@ const ViewLayout: NextPage = () => {
                       <span>Hide fields</span>
                     </div>
                     <div
-                      className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 hover:bg-[#f2f2f2]"
+                      className={`flex w-auto cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 ${filters.length > 0 ? "bg-[#caf4d3] hover:outline hover:outline-2 hover:outline-gray-200" : "hover:bg-[#f2f2f2]"}`}
                       onClick={(e) => {
                         e.preventDefault();
                         const element = e.currentTarget;
@@ -561,14 +601,18 @@ const ViewLayout: NextPage = () => {
                       }}
                     >
                       <IoFilterOutline size={15} />
-                      <span>Filter</span>
+                      <span className="w-auto">
+                        {filters.length > 0
+                          ? `Filtered by ${filters.map((fil) => fil.field).join(", ")}`
+                          : "Filter"}
+                      </span>
                     </div>
                     <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 hover:bg-[#f2f2f2]">
                       <AiOutlineGroup size={15} />
                       <span>Group</span>
                     </div>
                     <div
-                      className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 hover:bg-[#f2f2f2]"
+                      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 ${sorters.length > 0 ? "bg-[#ffe0cd] hover:outline hover:outline-2 hover:outline-gray-200" : "hover:bg-[#f2f2f2]"}`}
                       onClick={(e) => {
                         e.preventDefault();
                         const element = e.currentTarget;
@@ -578,7 +622,11 @@ const ViewLayout: NextPage = () => {
                       }}
                     >
                       <TbArrowsSort className="scale-y-125" size={13} />
-                      <span>Sort</span>
+                      <span>
+                        {sorters.length > 0
+                          ? `Sorted by ${sorters.length} ${sorters.length > 1 ? "fields" : "field"}`
+                          : "Sort"}
+                      </span>
                     </div>
                     <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 hover:bg-[#f2f2f2]">
                       <PiPaintBucket size={15} />
@@ -610,7 +658,7 @@ const ViewLayout: NextPage = () => {
           </div>
         </div>
         <div className="mt-[44px]"></div>
-        <div className="flex h-[calc(100%-132px)] flex-row">
+        <div className="relative z-10 flex h-[calc(100%-132px)] flex-row">
           {loadingViewsState ? (
             <div className="flex h-full w-[282px] flex-col justify-between border-2 bg-white px-3 pt-2">
               <div className="mt-10 flex h-[33px] flex-row items-center rounded-md bg-[#fafafa]">
@@ -619,9 +667,9 @@ const ViewLayout: NextPage = () => {
               </div>
             </div>
           ) : (
-            <>
+            <div className="relative flex h-full w-full flex-row">
               <div
-                className="flex h-full w-[282px] flex-col justify-between border-2 bg-white px-3 pt-2"
+                className="sticky top-0 z-10 flex h-full w-[282px] flex-col justify-between border-2 bg-white px-3 pt-2"
                 id="sidebar"
                 onClick={() => {
                   setTableModalOpen(false);
@@ -643,7 +691,7 @@ const ViewLayout: NextPage = () => {
                       <GoGear className="text-gray-500" size={16} />
                     </div>
                   </div>
-                  <div className="mt-3 flex flex-col">
+                  <div className="flex flex-col">
                     {viewsState.map((view) => (
                       <div
                         key={view.id}
@@ -656,9 +704,21 @@ const ViewLayout: NextPage = () => {
                             );
                           }
                         }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          const element = e.currentTarget;
+                          const rect = element.getBoundingClientRect();
+                          setMousePosition({
+                            x: rect.right + 10,
+                            y: rect.top,
+                          });
+                          setSelectedViewId(view.id);
+                          setViewPopUpModalOpen(true);
+                        }}
                       >
                         <ViewsList
                           currentViewId={currentView!}
+                          isRenaming={view.isRenaming ?? false}
                           id={view.id}
                           name={view.name}
                           setCurrentView={setCurrentView}
@@ -687,11 +747,14 @@ const ViewLayout: NextPage = () => {
                       e.preventDefault();
                       const uniqueCUID = cuid();
                       const newView: ViewObj = {
+                        searchTerm: "",
                         id: uniqueCUID,
                         name: "Grid View",
                         tableId: tableId,
                         filterState: [],
                         sorterState: [],
+                        isRenaming: false,
+                        createdAt: new Date(),
                       };
                       setCurrentView(newView.id);
                       setViewState((prev) => {
@@ -770,171 +833,202 @@ const ViewLayout: NextPage = () => {
                   <span className="text-gray-500">Loading this view</span>
                 </div>
               ) : (
-                <>
-                  <div
-                    className="relative overflow-auto"
-                    onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
-                    ref={tableContainerRef}
+                <div
+                  className="relative w-full overflow-auto"
+                  onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
+                  ref={tableContainerRef}
+                >
+                  <Box
+                    className="sticky top-0 z-10 table bg-transparent hover:bg-[#f7f7f7]"
+                    w={table.getTotalSize() + 150}
+                    key={tableId}
                   >
-                    <Box
-                      className="sticky top-0 z-10 table bg-white hover:bg-[#f7f7f7]"
-                      w={table.getTotalSize()}
-                      key={tableId}
-                    >
-                      {table.getHeaderGroups().map((headerGroup) => (
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <Box className="table-header-group" key={headerGroup.id}>
                         <Box
-                          className="table-header-group"
-                          key={headerGroup.id}
+                          id="select-all"
+                          className="flex h-[32px] w-14 items-center justify-start bg-[#f2f2f2]"
                         >
-                          {headerGroup.headers.map((header) => (
-                            <Box
-                              className="table-cell border bg-[#f2f2f2] text-center align-middle text-[13px]"
-                              w={header.getSize()}
-                              height="32px"
-                              key={header.id}
-                            >
-                              {header.isPlaceholder ? null : (
-                                <Box>
-                                  {flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext(),
+                          <input
+                            id="default-checkbox"
+                            type="checkbox"
+                            value=""
+                            checked={false}
+                            className="ml-[13px] h-3 w-3 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
+                          />
+                        </Box>
+                        {headerGroup.headers.map((header) => (
+                          <Box
+                            className="table-cell border-y border-r bg-[#f2f2f2] text-center align-middle text-[13px] hover:bg-[#fafafa] hover:bg-opacity-50"
+                            w={header.getSize()}
+                            height="32px"
+                            key={header.id}
+                          >
+                            {header.isPlaceholder ? null : (
+                              <Box className="flex flex-row justify-between">
+                                <Box className="flex flex-row items-center gap-2 pl-2">
+                                  {header.column.columnDef.meta && (
+                                    <Box className="opacity-50">
+                                      {getIconComponent(
+                                        (
+                                          header.column.columnDef
+                                            .meta as MetaType
+                                        ).icon!,
+                                      )}
+                                    </Box>
                                   )}
+                                  <Box className="text-[12.5px] opacity-80">
+                                    {flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext(),
+                                    )}
+                                  </Box>
                                 </Box>
-                              )}
+                                <Box className="flex cursor-pointer items-center rounded-full px-2 opacity-50">
+                                  <FaChevronDown size={12} />
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+                        ))}
+                        <Box
+                          className="table-cell pl-9 w-[94px] cursor-pointer align-middle border bg-[#f2f2f2] hover:bg-opacity-20"
+                          height={"32px"}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (e.button === 0) {
+                              setMousePosition({ x: e.clientX, y: e.clientY });
+                              setColumnPopUpOpen(true);
+                            }
+                          }}
+                        >
+                          <PiPlus size={18} />
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                  <Box
+                    className="relative bg-transparent"
+                    style={{
+                      height: `${rowVirtualizer.getTotalSize()}px`,
+                    }}
+                  >
+                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const row = rows[virtualRow.index];
+                      return (
+                        <Box
+                          data-index={virtualRow.index}
+                          className="group absolute table-row hover:bg-[#f8f8f8]"
+                          ref={(node: Element | null) =>
+                            rowVirtualizer.measureElement(node)
+                          }
+                          key={row?.id}
+                          onClick={() => {
+                            closePopup();
+                          }}
+                          style={{
+                            transform: `translateY(${virtualRow.start}px)`,
+                          }}
+                        >
+                          <Box className="table-cell h-[32px] w-14 border-y bg-white px-[21px] text-start align-middle group-hover:bg-inherit">
+                            <input
+                              id="default-checkbox"
+                              type="checkbox"
+                              value=""
+                              checked={false}
+                              className="-ml-2 hidden h-3 w-3 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 group-hover:flex dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
+                            />
+                            <span className="-ml-2 text-[12px] opacity-50 group-hover:hidden">
+                              {virtualRow.index + 1}
+                            </span>
+                          </Box>
+                          {row?.getVisibleCells().map((cell) => (
+                            <Box
+                              className="table-cell border-y border-r align-middle text-sm"
+                              w={180}
+                              height="32px"
+                              key={cell.id}
+                            >
+                              <input
+                                type="text"
+                                value={(cell.getValue() as string) ?? ""}
+                                className={`h-[33px] w-full cursor-default rounded-sm p-1 outline-none focus:outline-none focus:ring-2 focus:ring-blue-500 group-hover:bg-inherit`}
+                                onContextMenu={(e) => {
+                                  e.preventDefault();
+                                  setMousePosition({
+                                    x: e.clientX,
+                                    y: e.clientY,
+                                  });
+                                  setPopUpId(row.id);
+                                  openPopup();
+                                }}
+                                onChange={(e) => {
+                                  setRows((prevData) =>
+                                    prevData.map((theRow) =>
+                                      theRow.id === row.id
+                                        ? {
+                                            ...theRow,
+                                            [cell.column.columnDef
+                                              .header as string]:
+                                              e.target.value,
+                                          }
+                                        : theRow,
+                                    ),
+                                  );
+                                }}
+                                onBlur={() => {
+                                  updateCell({
+                                    columnId: cell.column.id,
+                                    rowId: cell.row.id,
+                                    newValue: cell.getValue() as string,
+                                  });
+                                }}
+                              />
                             </Box>
                           ))}
                         </Box>
-                      ))}
-                    </Box>
-                    <Box
-                      className="relative bg-white"
-                      style={{
-                        height: `${rowVirtualizer.getTotalSize()}px`,
-                      }}
-                    >
-                      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                        const row = rows[virtualRow.index];
-                        return (
-                          <Box
-                            data-index={virtualRow.index}
-                            className="group absolute table-row hover:bg-[#f8f8f8]"
-                            ref={(node: Element | null) =>
-                              rowVirtualizer.measureElement(node)
-                            }
-                            key={row?.id}
-                            onClick={() => {
-                              closePopup();
-                            }}
-                            style={{
-                              transform: `translateY(${virtualRow.start}px)`,
-                            }}
-                          >
-                            {row?.getVisibleCells().map((cell) => (
-                              <Box
-                                className="table-cell border align-middle text-sm"
-                                w={cell.column.getSize()}
-                                height="32px"
-                                key={cell.id}
-                              >
-                                <input
-                                  type="text"
-                                  value={(cell.getValue() as string) ?? ""}
-                                  className={`h-[33px] w-full cursor-default rounded-sm p-1 outline-none focus:outline-none focus:ring-2 focus:ring-blue-500 group-hover:bg-inherit`}
-                                  onContextMenu={(e) => {
-                                    e.preventDefault();
-                                    setMousePosition({
-                                      x: e.clientX,
-                                      y: e.clientY,
-                                    });
-                                    setPopUpId(row.id);
-                                    openPopup();
-                                  }}
-                                  onChange={(e) => {
-                                    setRows((prevData) =>
-                                      prevData.map((theRow) =>
-                                        theRow.id === row.id
-                                          ? {
-                                              ...theRow,
-                                              [cell.column.columnDef
-                                                .header as string]:
-                                                e.target.value,
-                                            }
-                                          : theRow,
-                                      ),
-                                    );
-                                  }}
-                                  onBlur={() => {
-                                    updateCell({
-                                      columnId: cell.column.id,
-                                      rowId: cell.row.id,
-                                      newValue: cell.getValue() as string,
-                                    });
-                                  }}
-                                />
-                              </Box>
-                            ))}
-                          </Box>
-                        );
-                      })}
-                    </Box>
-                    <div
-                      className="flex h-[32px] w-full cursor-pointer border bg-white text-black hover:bg-[#f2f2f2]"
-                      onClick={() => {
-                        const createdRow = columns.reduce(
-                          (acc, col) => {
-                            const header = col.header;
-                            acc[header as string] = "";
-                            return acc;
-                          },
-                          {} as Record<string, string>,
-                        );
-                        setRows((prevData) => [...prevData, createdRow]);
-                        newRow({
-                          tableId,
-                        });
-                      }}
-                    >
-                      <div className="flex h-full w-[149px] items-center border-r pl-2">
-                        <PiPlus size={17} />
-                      </div>
-                    </div>
-                    <div
-                      className="flex h-[32px] w-[149px] cursor-pointer items-center rounded-md bg-white text-red-500 hover:text-red-400"
-                      onClick={() => {
-                        add5k({ tableId });
-                      }}
-                    >
-                      ADD 5K RECORDS
-                    </div>
-                    <PopUp
-                      isOpen={isOpen}
-                      setData={setRows}
-                      x={mousePosition.x + 10}
-                      y={mousePosition.y + 10}
-                      record={popUpId}
-                    />
-                  </div>
+                      );
+                    })}
+                  </Box>
                   <div
-                    className="flex h-8 flex-shrink cursor-pointer items-center border bg-[#f2f2f2] px-10 hover:bg-opacity-20"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (e.button === 0) {
-                        setMousePosition({ x: e.clientX, y: e.clientY });
-                        setColumnPopUpOpen(true);
-                      }
+                    className="sticky top-0 flex h-[32px] w-full cursor-pointer border bg-white text-black hover:bg-[#f2f2f2]"
+                    onClick={() => {
+                      const createdRow = columns.reduce(
+                        (acc, col) => {
+                          const header = col.header;
+                          acc[header as string] = "";
+                          return acc;
+                        },
+                        {} as Record<string, string>,
+                      );
+                      setRows((prevData) => [...prevData, createdRow]);
+                      newRow({
+                        tableId,
+                      });
                     }}
                   >
-                    <PiPlus size={18} />
+                    <div className="flex h-full w-[149px] items-center border-r pl-2">
+                      <PiPlus size={17} />
+                    </div>
                   </div>
                   <div
-                    className="flex flex-grow"
-                    onClick={async () => {
-                      console.log(viewsState);
+                    className="flex h-[32px] w-[149px] cursor-pointer items-center rounded-md bg-white text-red-500 hover:text-red-400"
+                    onClick={() => {
+                      add5k({ tableId });
                     }}
-                  ></div>
-                </>
+                  >
+                    ADD 5K RECORDS
+                  </div>
+                  <PopUp
+                    isOpen={isOpen}
+                    setData={setRows}
+                    x={mousePosition.x + 10}
+                    y={mousePosition.y + 10}
+                    record={popUpId}
+                  />
+                </div>
               )}
-            </>
+            </div>
           )}
           <TablePopUp
             isOpen={tableModalOpen}
@@ -996,6 +1090,19 @@ const ViewLayout: NextPage = () => {
             y={mousePosition.y}
             tableId={tableId}
             setSearchPopUpState={setSearchPopUpState}
+          />
+          <ViewPopUp
+            currentViewId={currentView!}
+            selectedViewId={selectedViewId}
+            isOpen={viewPopUpModalOpen}
+            baseId={baseId}
+            tableId={tableId}
+            setCurrentView={setCurrentView}
+            setModalOpen={setViewPopUpModalOpen}
+            setViewState={setViewState}
+            viewState={viewsState}
+            x={mousePosition.x}
+            y={mousePosition.y}
           />
         </div>
       </main>

@@ -12,6 +12,7 @@ export const baseRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string(),
+        id: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -20,20 +21,47 @@ export const baseRouter = createTRPCRouter({
       const cuid2 = cuid();
       const cuid3 = cuid();
       const cuid4 = cuid();
+      const cuid5 = cuid();
       const base = await ctx.db.base.create({
         data: {
           name: input.name,
           authorId,
+          id: input.id,
           tables: {
             create: [
               {
-                id: cuid4,
+                id: cuid5,
                 name: "Table 1",
                 columns: {
                   create: [
-                    { name: "Name", id: cuid1, type: "string" },
-                    { name: "Notes", id: cuid2, type: "string" },
-                    { name: "Assignee", id: cuid3, type: "string" },
+                    {
+                      name: "Name",
+                      id: cuid1,
+                      type: "string",
+                      priority: "primary",
+                      icon: "MdOutlineTextFormat",
+                    },
+                    {
+                      name: "Notes",
+                      id: cuid2,
+                      type: "string",
+                      priority: "secondary",
+                      icon: "LuLetterText",
+                    },
+                    {
+                      name: "Assignee",
+                      id: cuid3,
+                      type: "string",
+                      priority: "secondary",
+                      icon: "PiUser",
+                    },
+                    {
+                      name: "Status",
+                      id: cuid4,
+                      type: "string",
+                      priority: "secondary",
+                      icon: "TbCircleChevronDown",
+                    },
                   ],
                 },
                 rows: {
@@ -44,62 +72,77 @@ export const baseRouter = createTRPCRouter({
                         create: [
                           {
                             stringValue: "",
-                            tableId: cuid4,
+                            tableId: cuid5,
                             columnId: cuid1,
                           },
                           {
                             stringValue: "",
-                            tableId: cuid4,
+                            tableId: cuid5,
                             columnId: cuid2,
                           },
                           {
                             stringValue: "",
-                            tableId: cuid4,
+                            tableId: cuid5,
                             columnId: cuid3,
+                          },
+                          {
+                            stringValue: "",
+                            tableId: cuid5,
+                            columnId: cuid4,
                           },
                         ],
                       },
                     },
                     {
-                      rowOrder: 1,
+                      rowOrder: 2,
                       cells: {
                         create: [
                           {
                             stringValue: "",
-                            tableId: cuid4,
+                            tableId: cuid5,
                             columnId: cuid1,
                           },
                           {
                             stringValue: "",
-                            tableId: cuid4,
+                            tableId: cuid5,
                             columnId: cuid2,
                           },
                           {
                             stringValue: "",
-                            tableId: cuid4,
+                            tableId: cuid5,
                             columnId: cuid3,
+                          },
+                          {
+                            stringValue: "",
+                            tableId: cuid5,
+                            columnId: cuid4,
                           },
                         ],
                       },
                     },
                     {
-                      rowOrder: 1,
+                      rowOrder: 3,
                       cells: {
                         create: [
                           {
                             stringValue: "",
-                            tableId: cuid4,
+                            tableId: cuid5,
                             columnId: cuid1,
                           },
                           {
                             stringValue: "",
-                            tableId: cuid4,
+                            tableId: cuid5,
                             columnId: cuid2,
                           },
                           {
                             stringValue: "",
-                            tableId: cuid4,
+                            tableId: cuid5,
                             columnId: cuid3,
+                          },
+                          {
+                            stringValue: "",
+                            tableId: cuid5,
+                            columnId: cuid4,
                           },
                         ],
                       },
@@ -108,7 +151,12 @@ export const baseRouter = createTRPCRouter({
                 },
                 views: {
                   create: [
-                    { name: "Grid View 1", sorterState: [], filterState: [] },
+                    {
+                      name: "Grid View 1",
+                      sorterState: [],
+                      filterState: [],
+                      searchTerm: "",
+                    },
                   ],
                 },
               },

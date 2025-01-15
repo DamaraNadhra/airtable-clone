@@ -39,6 +39,7 @@ import {
   useUser,
 } from "@clerk/nextjs";
 import { useRouter } from "next/router";
+import cuid from "cuid";
 
 const BaseLayout = (props: PropsWithChildren) => {
   return (
@@ -76,15 +77,8 @@ const BaseView = (props: BaseKind) => {
 
 export default function Home() {
   const router = useRouter();
-  const { mutate: createBase } = api.base.create.useMutation({
-    onSuccess: async (base) => {
-      const tableId = base.tables.pop()?.id;
-      await router.push(`/${base.id}`);
-    },
-  });
+  const { mutate: createBase } = api.base.create.useMutation();
   const { data: baseData, isLoading: baseLoading } = api.base.getAll.useQuery();
-
-  if (baseLoading) return <div>Loading...</div>;
 
   return (
     <>
@@ -234,8 +228,9 @@ export default function Home() {
                   <button
                     className="mt-4"
                     onClick={() => {
-                      const newlyCreatedBase = createBase({ name: "Untitled" });
-                      console.log(newlyCreatedBase);
+                      const uniqueCUID = cuid();
+                      createBase({ name: "Untitled", id: uniqueCUID });
+                      void router.push(`/${uniqueCUID}`);
                     }}
                   >
                     <div className="flex flex-row items-center justify-center gap-3 rounded-md bg-blue-600 px-4 py-2 text-white">

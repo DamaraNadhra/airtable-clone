@@ -9,11 +9,12 @@ const BasePage = () => {
   const { id } = router.query;
 
   // Fetch tables using the useQuery hook directly
-  const { data, isLoading, isError } = api.table.getAllTablesByBaseId.useQuery({
+  const { data, isError } = api.table.getAllTablesByBaseId.useQuery({
     baseId: id as string, // Ensuring baseId is treated as a string
   });
-  const { data: baseData, isLoading: loadingBase } =
-    api.base.getBaseById.useQuery({ baseId: id as string });
+  const { data: baseData } = api.base.getBaseById.useQuery({
+    baseId: id as string,
+  });
 
   useEffect(() => {
     // If there are tables, redirect to the first table
@@ -28,7 +29,7 @@ const BasePage = () => {
         },
       });
     }
-  }, [data, id, router]);
+  }, [data, id, router, baseData]);
 
   if (isError) return <div>Error fetching tables</div>;
   if (!id || typeof id !== "string") return <div>Loading...</div>;

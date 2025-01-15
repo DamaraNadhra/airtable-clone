@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { api } from "~/utils/api";
 import { OutsideClick } from "outsideclick-react";
-import { Base, Table } from "@prisma/client";
+import type { Base, Table } from "@prisma/client";
 export const TablePopUp: React.FC<{
   x: number;
   y: number;

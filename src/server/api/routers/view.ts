@@ -41,6 +41,7 @@ export const viewsRouter = createTRPCRouter({
           id: input.id,
           name: input.name,
           tableId: input.tableId,
+          searchTerm: "",
         },
       });
       return view;
@@ -51,6 +52,8 @@ export const viewsRouter = createTRPCRouter({
         id: z.string(),
         filters: z.array(z.any()).optional(),
         sorters: z.array(z.any()).optional(),
+        newName: z.string().optional(),
+        searchTerm: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -59,8 +62,22 @@ export const viewsRouter = createTRPCRouter({
         data: {
           filterState: input.filters,
           sorterState: input.sorters,
+          name: input.newName,
+          searchTerm: input.searchTerm,
         },
       });
       return updatedView;
+    }),
+  deleteById: privateProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const deletedView = await ctx.db.view.delete({
+        where: { id: input.id },
+      });
+      return deletedView;
     }),
 });

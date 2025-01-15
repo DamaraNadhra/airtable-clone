@@ -20,16 +20,42 @@ export const tableRouter = createTRPCRouter({
       const cuid1 = cuid();
       const cuid2 = cuid();
       const cuid3 = cuid();
-      const table = await ctx.db.table.create({
+      const cuid4 = cuid();
+      await ctx.db.table.create({
         data: {
           name: input.name,
           baseId: input.baseId,
           id: input.id,
           columns: {
             create: [
-              { name: "Name", id: cuid1, type: "string" },
-              { name: "Notes", id: cuid2, type: "string" },
-              { name: "Assignee", id: cuid3, type: "string" },
+              {
+                name: "Name",
+                id: cuid1,
+                type: "string",
+                priority: "primary",
+                icon: "MdOutlineTextFormat",
+              },
+              {
+                name: "Notes",
+                id: cuid2,
+                type: "string",
+                priority: "secondary",
+                icon: "LuLetterText",
+              },
+              {
+                name: "Assignee",
+                id: cuid3,
+                type: "string",
+                priority: "secondary",
+                icon: "PiUser",
+              },
+              {
+                name: "Status",
+                id: cuid4,
+                type: "string",
+                priority: "secondary",
+                icon: "TbCircleChevronDown",
+              },
             ],
           },
           rows: {
@@ -53,6 +79,11 @@ export const tableRouter = createTRPCRouter({
                       tableId: input.id,
                       columnId: cuid3,
                     },
+                    {
+                      stringValue: "",
+                      tableId: input.id,
+                      columnId: cuid4,
+                    },
                   ],
                 },
               },
@@ -74,6 +105,11 @@ export const tableRouter = createTRPCRouter({
                       stringValue: "",
                       tableId: input.id,
                       columnId: cuid3,
+                    },
+                    {
+                      stringValue: "",
+                      tableId: input.id,
+                      columnId: cuid4,
                     },
                   ],
                 },
@@ -97,6 +133,11 @@ export const tableRouter = createTRPCRouter({
                       tableId: input.id,
                       columnId: cuid3,
                     },
+                    {
+                      stringValue: "",
+                      tableId: input.id,
+                      columnId: cuid4,
+                    },
                   ],
                 },
               },
@@ -109,6 +150,7 @@ export const tableRouter = createTRPCRouter({
                 id: input.viewId,
                 sorterState: [],
                 filterState: [],
+                searchTerm: "",
               },
             ],
           },

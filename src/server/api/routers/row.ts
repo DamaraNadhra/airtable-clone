@@ -1,11 +1,8 @@
-import { faker } from "@faker-js/faker";
+import { faker, ne } from "@faker-js/faker";
 import type { Prisma } from "@prisma/client";
-import { BsInputCursor } from "react-icons/bs";
 import { z } from "zod";
 
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
-
-type RowFields = Record<string, string | null>;
 
 export const rowRouter = createTRPCRouter({
   create: privateProcedure
@@ -141,6 +138,7 @@ export const rowRouter = createTRPCRouter({
             },
             [cellValue]: {
               contains: input.searchTerm,
+              mode: "insensitive",
             },
           };
         }
@@ -200,21 +198,29 @@ export const rowRouter = createTRPCRouter({
             filter.columnType === "string" ? "stringValue" : "intValue";
 
           const positiveFilter = {
-            column: {
-              name: filter.field,
-            },
-            [filterValue]: {
-              [filter.key]: filter.value,
+            cells: {
+              some: {
+                column: {
+                  name: filter.field,
+                },
+                [filterValue]: {
+                  [filter.key]: filter.value,
+                },
+              },
             },
           };
 
           const negativeFilter = {
-            column: {
-              name: filter.field,
-            },
-            [filterValue]: {
-              not: {
-                [filter.key]: filter.value,
+            cells: {
+              some: {
+                column: {
+                  name: filter.field,
+                },
+                [filterValue]: {
+                  not: {
+                    [filter.key]: filter.value,
+                  },
+                },
               },
             },
           };
@@ -232,21 +238,29 @@ export const rowRouter = createTRPCRouter({
             filter.columnType === "string" ? "stringValue" : "intValue";
 
           const positiveFilter = {
-            column: {
-              name: filter.field,
-            },
-            [filterValue]: {
-              [filter.key]: filter.value,
+            cells: {
+              some: {
+                column: {
+                  name: filter.field,
+                },
+                [filterValue]: {
+                  [filter.key]: filter.value,
+                },
+              },
             },
           };
 
           const negativeFilter = {
-            column: {
-              name: filter.field,
-            },
-            [filterValue]: {
-              not: {
-                [filter.key]: filter.value,
+            cells: {
+              some: {
+                column: {
+                  name: filter.field,
+                },
+                [filterValue]: {
+                  not: {
+                    [filter.key]: filter.value,
+                  },
+                },
               },
             },
           };
@@ -261,22 +275,31 @@ export const rowRouter = createTRPCRouter({
         .map((filter) => {
           const filterValue =
             filter.columnType === "string" ? "stringValue" : "intValue";
+
           const positiveFilter = {
-            column: {
-              name: filter.field,
-            },
-            [filterValue]: {
-              [filter.key]: filter.value,
+            cells: {
+              some: {
+                column: {
+                  name: filter.field,
+                },
+                [filterValue]: {
+                  [filter.key]: filter.value,
+                },
+              },
             },
           };
 
           const negativeFilter = {
-            column: {
-              name: filter.field,
-            },
-            [filterValue]: {
-              not: {
-                [filter.key]: filter.value,
+            cells: {
+              some: {
+                column: {
+                  name: filter.field,
+                },
+                [filterValue]: {
+                  not: {
+                    [filter.key]: filter.value,
+                  },
+                },
               },
             },
           };
@@ -297,29 +320,25 @@ export const rowRouter = createTRPCRouter({
       const cells = await ctx.db.cell.findMany({
         where: {
           tableId: input.tableId,
-          ...(neutralFilter.length === 0 &&
-            ANDFilters.length === 0 &&
-            ORFilters.length === 0 &&
-            sorterNarrower),
-
-          AND: [
-            ...(ORFilters.length === 0
-              ? [...ANDFilters, ...neutralFilter]
-              : []),
-            {
-              row: {
+          ...sorterNarrower,
+          row: {
+            AND: [
+              {
                 cells: {
                   some: {
                     OR: searchFilter,
                   },
                 },
               },
-            },
-          ] as Prisma.CellWhereInput[],
-          ...(ORFilters.length > 0 &&
-            ANDFilters.length === 0 && {
-              OR: [...ORFilters, ...neutralFilter] as Prisma.CellWhereInput[],
-            }),
+              ...(ORFilters.length === 0
+                ? [...ANDFilters, ...neutralFilter]
+                : []),
+            ],
+            ...(ORFilters.length > 0 &&
+              ANDFilters.length === 0 && {
+                OR: [...ORFilters, ...neutralFilter],
+              }),
+          },
         },
         include: {
           column: true,
@@ -342,7 +361,10 @@ export const rowRouter = createTRPCRouter({
         where: { tableId: input.tableId },
       });
 
-      console.log(searchFilter);
+      console.log(
+        "putangina",
+        ...(ORFilters.length === 0 ? [...ANDFilters, ...neutralFilter] : []),
+      );
       let nextCursor: string | undefined = undefined;
 
       if (cells.length > limit) {
@@ -354,7 +376,6 @@ export const rowRouter = createTRPCRouter({
         input.sorters.map((sorter, index) => {
           if (index === 0) return;
           rows.sort((rowA, rowB) => {
-            console.log("hahaha");
             const sorterValue =
               sorter.type === "string" ? "stringValue" : "intValue";
             const cellA = rowA.cells.find(
@@ -363,8 +384,10 @@ export const rowRouter = createTRPCRouter({
             const cellB = rowB.cells.find(
               (cell) => cell.column.name === sorter.field,
             );
-            const valueA = cellA![sorterValue];
-            const valueB = cellB![sorterValue];
+            if (!cellA || !cellB) return 0;
+            const valueA = cellA[sorterValue];
+            const valueB = cellB[sorterValue];
+
             if (typeof valueA === "number" && typeof valueB === "number") {
               if (sorter.order === "asc") {
                 return valueA - valueB;
@@ -381,6 +404,7 @@ export const rowRouter = createTRPCRouter({
             }
             return 0;
           });
+          console.log(`Sorted for the ${index + 1} times`)
         });
       }
       return {

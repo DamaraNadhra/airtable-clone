@@ -7,20 +7,11 @@ import { useDebounce } from "use-debounce";
 import { FaChevronDown, FaRegTrashCan } from "react-icons/fa6";
 import type { Column, View } from "@prisma/client";
 import { api } from "~/utils/api";
+import { ViewObj } from "~/helpers/types";
 type FilterType = {
   key: string;
   isNegative: boolean;
 };
-
-type ViewObj =
-  | {
-      id: string;
-      name: string;
-      filterState?: Record<string, string>[];
-      sorterState?: Record<string, string>[];
-      tableId: string;
-    }
-  | View;
 
 type FilterObjType = {
   field: string;
@@ -227,8 +218,9 @@ export const FilterPopUp: React.FC<{
   const inputDisabled = (key: string) =>
     key === "is empty" || key === "is not empty";
   const [currentChosenFilter, setCurrentFilter] = useState<FilterObjType>();
-
+  const [isLocked, setIsLocked] = useState<string>("");
   const [filters, setFilters] = useState<FilterObjType[]>([]);
+  const isDisabled = () => filters.length > 2;
   useEffect(() => {
     const currentView = viewState.find((view) => view.id === currentViewId);
     if (currentView) {
@@ -286,8 +278,9 @@ export const FilterPopUp: React.FC<{
                   key={filterObj.id}
                 >
                   {filterObj.type !== "neutral" ? (
-                    <div
-                      className="mr-2 flex h-[30px] w-[50px] cursor-pointer items-center justify-between border px-2 hover:bg-[#f2f2f2]"
+                    <button
+                      className={`mr-2 flex h-[30px] w-[50px] items-center justify-between border px-2 ${isDisabled() ? "cursor-default" : "cursor-pointer hover:bg-[#f2f2f2]"}`}
+                      disabled={isDisabled()}
                       onClick={(e) => {
                         const element = e.currentTarget;
                         const rect = element.getBoundingClientRect();
@@ -298,10 +291,12 @@ export const FilterPopUp: React.FC<{
                       }}
                     >
                       <span>{filterObj.type}</span>
-                      <div id="icon-container">
-                        <FaChevronDown size={12} />
-                      </div>
-                    </div>
+                      {!isDisabled() && (
+                        <div id="icon-container">
+                          <FaChevronDown size={12} />
+                        </div>
+                      )}
+                    </button>
                   ) : (
                     <span className="w-[60px] text-center">Where</span>
                   )}
@@ -321,7 +316,7 @@ export const FilterPopUp: React.FC<{
                     </div>
                   </div>
                   <div
-                    className="flex h-[30px] w-[100px] cursor-pointer flex-row items-center justify-between border-[1px] px-2 hover:bg-[#f2f2f2]"
+                    className={`flex h-[30px] w-[100px] cursor-pointer flex-row items-center justify-between border-[1px] px-2 hover:bg-[#f2f2f2]`}
                     onClick={(e) => {
                       setFilterTypeModal(true);
                       const element = e.currentTarget;
@@ -338,7 +333,7 @@ export const FilterPopUp: React.FC<{
                   <input
                     type="text"
                     placeholder={
-                      inputDisabled(filterObj.key) ? "" : "type something"
+                      inputDisabled(filterObj.filterKey) ? "" : "type something"
                     }
                     className="h-[30px] border px-2 outline-none"
                     value={filterObj.value ?? ""}
@@ -354,14 +349,22 @@ export const FilterPopUp: React.FC<{
                         return [...filteredFilterState, newFilter];
                       });
                     }}
-                    disabled={inputDisabled(filterObj.key)}
+                    disabled={inputDisabled(filterObj.filterKey)}
                   />
                   <div
                     className="flex h-[30px] cursor-pointer items-center border p-1 hover:bg-[#f2f2f2]"
                     onClick={() => {
-                      setFilters((prev) =>
-                        prev.filter((obj) => obj.id !== filterObj.id),
-                      );
+                      setFilters((prev) => {
+                        const filteredFilterState = prev.filter(
+                          (filter) => filter.id !== filterObj.id,
+                        );
+                        if (filterObj.type === "neutral") {
+                          return filteredFilterState.map((view, index) =>
+                            index === 0 ? { ...view, type: "neutral" } : view,
+                          );
+                        }
+                        return filteredFilterState;
+                      });
                     }}
                   >
                     <FaRegTrashCan size={15} />
@@ -374,6 +377,12 @@ export const FilterPopUp: React.FC<{
             className="flex cursor-pointer flex-row items-center gap-3 hover:text-blue-500"
             onClick={() => {
               const uniqueId = cuid();
+              let newFilterType = "neutral";
+              if (filters.length === 1) {
+                newFilterType = "or";
+              } else if (filters.length >= 2) {
+                newFilterType = filters[1]?.type ?? "or";
+              }
               setFilters((prev) => {
                 const newFilter: FilterObjType = {
                   field: "Name",
@@ -381,7 +390,7 @@ export const FilterPopUp: React.FC<{
                   filterKey: "contains",
                   value: null,
                   isNegative: true,
-                  type: filters.length > 0 ? "or" : "neutral",
+                  type: newFilterType,
                   columnType: "string",
                   id: uniqueId,
                 };
