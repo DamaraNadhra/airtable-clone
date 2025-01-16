@@ -3,7 +3,7 @@
  * for Docker builds.
  */
 import "./src/env.js";
-import {  } from '@svgr/webpack'
+import {} from "@svgr/webpack";
 /** @type {import("next").NextConfig} */
 const config = {
   reactStrictMode: true,
@@ -18,6 +18,9 @@ const config = {
     defaultLocale: "en",
   },
   transpilePackages: ["geist"],
+  images: {
+    domains: ["img.clerk.com"],
+  },
 };
 
 export default config;

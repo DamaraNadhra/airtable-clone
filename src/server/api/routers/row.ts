@@ -1,5 +1,5 @@
 import { faker, ne } from "@faker-js/faker";
-import type { Prisma } from "@prisma/client";
+import type { Cell, Prisma, Row } from "@prisma/client";
 import { z } from "zod";
 
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
@@ -9,6 +9,7 @@ export const rowRouter = createTRPCRouter({
     .input(
       z.object({
         tableId: z.string(),
+        id: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -22,7 +23,7 @@ export const rowRouter = createTRPCRouter({
         create: columns.map((col) => ({
           columnId: col.id,
           tableId: input.tableId,
-          ...(col.type === "string" ? { stringValue: "" } : { intValue: null }),
+          ...(col.type === "text" ? { stringValue: "" } : { intValue: null }),
         })),
       };
       const createdRow = await ctx.db.row.create({
@@ -30,6 +31,7 @@ export const rowRouter = createTRPCRouter({
           tableId: input.tableId,
           cells,
           rowOrder: maxRow + 1,
+          id: input.id,
         },
       });
       return createdRow;
@@ -65,7 +67,7 @@ export const rowRouter = createTRPCRouter({
         () => faker.food.dish(),
       ];
 
-      const rowRecords = Array.from({ length: 300 }).map((_, index) => ({
+      const rowRecords = Array.from({ length: 15000 }).map((_, index) => ({
         tableId: input.tableId,
         rowOrder: maxRow + index + 1,
       }));
@@ -78,7 +80,7 @@ export const rowRouter = createTRPCRouter({
           columnId: col.id,
           tableId: input.tableId,
           rowId: row.id,
-          ...(col.type === "string"
+          ...(col.type === "text"
             ? { stringValue: fakers[index % 3]!() }
             : { intValue: faker.number.int({ min: 1, max: 100 }) }),
         }));
@@ -130,15 +132,14 @@ export const rowRouter = createTRPCRouter({
         where: { tableId: input.tableId },
       });
       const searchFilter = columns.map((col) => {
-        const cellValue = col.type === "string" ? "stringValue" : "intValue";
-        if (col.type === "string") {
+        const cellValue = col.type === "text" ? "stringValue" : "intValue";
+        if (col.type === "text") {
           return {
             column: {
               name: col.name,
             },
             [cellValue]: {
-              contains: input.searchTerm,
-              mode: "insensitive",
+              equals: input.searchTerm,
             },
           };
         }
@@ -155,11 +156,13 @@ export const rowRouter = createTRPCRouter({
         const allRows = await ctx.db.row.findMany({
           where: {
             tableId: input.tableId,
-            cells: {
-              some: {
-                OR: searchFilter,
+            ...(input.searchTerm !== "" && {
+              cells: {
+                some: {
+                  OR: searchFilter,
+                },
               },
-            },
+            }),
           },
           include: {
             cells: {
@@ -190,12 +193,15 @@ export const rowRouter = createTRPCRouter({
           totalCount,
         };
       }
-      console.log("search filter:", searchFilter);
       const ANDFilters = filter
         .filter((filterObj) => filterObj.type === "and")
         .map((filter) => {
+          const valueAccessor =
+            filter.columnType === "text" ? "stringValue" : "intValue";
           const filterValue =
-            filter.columnType === "string" ? "stringValue" : "intValue";
+            filter.columnType === "text"
+              ? filter.value
+              : Number(filter.value ?? "");
 
           const positiveFilter = {
             cells: {
@@ -203,8 +209,8 @@ export const rowRouter = createTRPCRouter({
                 column: {
                   name: filter.field,
                 },
-                [filterValue]: {
-                  [filter.key]: filter.value,
+                [valueAccessor]: {
+                  [filter.key]: filterValue,
                 },
               },
             },
@@ -216,9 +222,9 @@ export const rowRouter = createTRPCRouter({
                 column: {
                   name: filter.field,
                 },
-                [filterValue]: {
+                [valueAccessor]: {
                   not: {
-                    [filter.key]: filter.value,
+                    [filter.key]: filterValue,
                   },
                 },
               },
@@ -234,8 +240,12 @@ export const rowRouter = createTRPCRouter({
       const ORFilters = filter
         .filter((filterObj) => filterObj.type === "or")
         .map((filter) => {
+          const valueAccessor =
+            filter.columnType === "text" ? "stringValue" : "intValue";
           const filterValue =
-            filter.columnType === "string" ? "stringValue" : "intValue";
+            filter.columnType === "text"
+              ? filter.value
+              : Number(filter.value ?? "");
 
           const positiveFilter = {
             cells: {
@@ -243,8 +253,8 @@ export const rowRouter = createTRPCRouter({
                 column: {
                   name: filter.field,
                 },
-                [filterValue]: {
-                  [filter.key]: filter.value,
+                [valueAccessor]: {
+                  [filter.key]: filterValue,
                 },
               },
             },
@@ -256,9 +266,9 @@ export const rowRouter = createTRPCRouter({
                 column: {
                   name: filter.field,
                 },
-                [filterValue]: {
+                [valueAccessor]: {
                   not: {
-                    [filter.key]: filter.value,
+                    [filter.key]: filterValue,
                   },
                 },
               },
@@ -273,8 +283,12 @@ export const rowRouter = createTRPCRouter({
       const neutralFilter = filter
         .filter((filterObj) => filterObj.type === "neutral")
         .map((filter) => {
+          const valueAccessor =
+            filter.columnType === "text" ? "stringValue" : "intValue";
           const filterValue =
-            filter.columnType === "string" ? "stringValue" : "intValue";
+            filter.columnType === "text"
+              ? filter.value
+              : Number(filter.value ?? "");
 
           const positiveFilter = {
             cells: {
@@ -282,8 +296,8 @@ export const rowRouter = createTRPCRouter({
                 column: {
                   name: filter.field,
                 },
-                [filterValue]: {
-                  [filter.key]: filter.value,
+                [valueAccessor]: {
+                  [filter.key]: filterValue,
                 },
               },
             },
@@ -295,9 +309,9 @@ export const rowRouter = createTRPCRouter({
                 column: {
                   name: filter.field,
                 },
-                [filterValue]: {
+                [valueAccessor]: {
                   not: {
-                    [filter.key]: filter.value,
+                    [filter.key]: filterValue,
                   },
                 },
               },
@@ -310,7 +324,7 @@ export const rowRouter = createTRPCRouter({
           return positiveFilter;
         });
       const sorter = input.sorters.map((sorter) => ({
-        [sorter.type === "string" ? "stringValue" : "intValue"]: sorter.order,
+        [sorter.type === "text" ? "stringValue" : "intValue"]: sorter.order,
       }));
       const sorterNarrower = {
         column: {
@@ -323,13 +337,17 @@ export const rowRouter = createTRPCRouter({
           ...sorterNarrower,
           row: {
             AND: [
-              {
-                cells: {
-                  some: {
-                    OR: searchFilter,
-                  },
-                },
-              },
+              ...(input.searchTerm !== ""
+                ? [
+                    {
+                      cells: {
+                        some: {
+                          OR: searchFilter,
+                        },
+                      },
+                    },
+                  ]
+                : []),
               ...(ORFilters.length === 0
                 ? [...ANDFilters, ...neutralFilter]
                 : []),
@@ -371,42 +389,59 @@ export const rowRouter = createTRPCRouter({
         const nextItem = cells.pop();
         nextCursor = nextItem?.id;
       }
+      type RowModel = Row & {
+        cells: Cell[];
+      };
       const rows = cells.map((cell) => cell.row);
+      function combineComparisonFunctions<T>(
+        compareFunctions: Array<(a: T, b: T) => number>,
+      ): (a: T, b: T) => number {
+        return (a: T, b: T): number => {
+          return compareFunctions.reduce((result, compareFunction) => {
+            // Proceeds to the next comparison function if the previous one returned 0
+            return result || compareFunction(a, b);
+          }, 0);
+        };
+      }
+
       if (sorter.length > 1) {
-        input.sorters.map((sorter, index) => {
-          if (index === 0) return;
-          rows.sort((rowA, rowB) => {
+        const compareFunctions = input.sorters.map((sorter) => {
+          return (a: (typeof rows)[number], b: (typeof rows)[number]) => {
             const sorterValue =
-              sorter.type === "string" ? "stringValue" : "intValue";
-            const cellA = rowA.cells.find(
+              sorter.type === "text" ? "stringValue" : "intValue";
+
+            // Find the cells to compare
+            const cellA = a.cells.find(
               (cell) => cell.column.name === sorter.field,
             );
-            const cellB = rowB.cells.find(
+            const cellB = b.cells.find(
               (cell) => cell.column.name === sorter.field,
             );
+
             if (!cellA || !cellB) return 0;
+
             const valueA = cellA[sorterValue];
             const valueB = cellB[sorterValue];
 
             if (typeof valueA === "number" && typeof valueB === "number") {
-              if (sorter.order === "asc") {
-                return valueA - valueB;
-              } else {
-                return valueB - valueA;
-              }
+              // Handle numeric values and sort by order
+              return sorter.order === "asc" ? valueA - valueB : valueB - valueA;
             }
+
             if (typeof valueA === "string" && typeof valueB === "string") {
-              if (sorter.type === "asc") {
-                return valueA.localeCompare(valueB); // Lexicographic comparison
-              } else {
-                return valueB.localeCompare(valueA); // Lexicographic comparison
-              }
+              // Handle string values and sort by order
+              return sorter.order === "asc"
+                ? valueA.localeCompare(valueB)
+                : valueB.localeCompare(valueA);
             }
-            return 0;
-          });
-          console.log(`Sorted for the ${index + 1} times`)
+
+            return 0; // No change if types do not match
+          };
         });
+        const combinedComparator = combineComparisonFunctions(compareFunctions);
+        rows.sort(combinedComparator);
       }
+
       return {
         rows,
         nextCursor,

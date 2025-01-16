@@ -7,7 +7,8 @@ import { useDebounce } from "use-debounce";
 import { FaChevronDown, FaRegTrashCan } from "react-icons/fa6";
 import type { Column, View } from "@prisma/client";
 import { api } from "~/utils/api";
-import { ViewObj } from "~/helpers/types";
+import { MetaType, ViewObj } from "~/helpers/types";
+import { getIconComponent } from "~/helpers/getIconComponent";
 type FilterType = {
   key: string;
   isNegative: boolean;
@@ -24,7 +25,7 @@ type FilterObjType = {
   type: string;
 };
 
-const filterTypes: Record<string, FilterType> = {
+const filterTypesString: Record<string, FilterType> = {
   contains: {
     isNegative: false,
     key: "contains",
@@ -40,6 +41,17 @@ const filterTypes: Record<string, FilterType> = {
   "is not empty": {
     isNegative: true,
     key: "equals",
+  },
+};
+
+const filterTypeNumber: Record<string, FilterType> = {
+  ">": {
+    isNegative: false,
+    key: "gt",
+  },
+  "<": {
+    isNegative: false,
+    key: "lt",
   },
 };
 
@@ -67,7 +79,7 @@ const FilterModifierPopUp: React.FC<{
     >
       {modifiers.map((key) => (
         <div
-          className="text-custom cursor-pointer px-2 py-1 hover:bg-[#f2f2f2]"
+          className="text-custom cursor-pointer px-2 py-1 text-[12.5px] hover:bg-[#f2f2f2]"
           key={key}
           onClick={() => {
             setFilterModifierModalOpen(false);
@@ -111,31 +123,63 @@ const FilterTypePopUp: React.FC<{
       className="fixed z-20 flex w-[130px] flex-col gap-0 rounded-sm bg-white p-3 text-sm shadow-md"
       style={{ left: `${x}px`, top: `${y}px` }}
     >
-      {Object.entries(filterTypes).map(([filterKey, filter]) => (
-        <div
-          className="cursor-pointer px-2 py-1 hover:bg-[#f2f2f2]"
-          key={filterKey}
-          onClick={() => {
-            const { key, isNegative } = filter;
-            console.log(key, isNegative);
-            setFilterTypeModalOpen(false);
-            setFilterState((prev) => {
-              const updatedFilter = {
-                ...currentFilterObj,
-                key,
-                filterKey,
-                isNegative,
-              };
-              const prevFilters = prev.filter(
-                (filter) => filter.id !== currentFilterObj.id,
-              );
-              return [...prevFilters, updatedFilter];
-            });
-          }}
-        >
-          {filterKey}
-        </div>
-      ))}
+      {currentFilterObj.columnType === "text" ? (
+        <>
+          {Object.entries(filterTypesString).map(([filterKey, filter]) => (
+            <div
+              className="cursor-pointer px-2 py-1 text-[12.5px] hover:bg-[#f2f2f2]"
+              key={filterKey}
+              onClick={() => {
+                const { key, isNegative } = filter;
+                console.log(key, isNegative);
+                setFilterTypeModalOpen(false);
+                setFilterState((prev) => {
+                  const updatedFilter = {
+                    ...currentFilterObj,
+                    key,
+                    filterKey,
+                    isNegative,
+                  };
+                  const prevFilters = prev.filter(
+                    (filter) => filter.id !== currentFilterObj.id,
+                  );
+                  return [...prevFilters, updatedFilter];
+                });
+              }}
+            >
+              {filterKey}
+            </div>
+          ))}
+        </>
+      ) : (
+        <>
+          {Object.entries(filterTypeNumber).map(([filterKey, filter]) => (
+            <div
+              className="cursor-pointer px-2 py-1 hover:bg-[#f2f2f2]"
+              key={filterKey}
+              onClick={() => {
+                const { key, isNegative } = filter;
+                console.log(key, isNegative);
+                setFilterTypeModalOpen(false);
+                setFilterState((prev) => {
+                  const updatedFilter = {
+                    ...currentFilterObj,
+                    key,
+                    filterKey,
+                    isNegative,
+                  };
+                  const prevFilters = prev.filter(
+                    (filter) => filter.id !== currentFilterObj.id,
+                  );
+                  return [...prevFilters, updatedFilter];
+                });
+              }}
+            >
+              {filterKey}
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 };
@@ -144,7 +188,7 @@ const FieldTypePopUp: React.FC<{
   x: number;
   y: number;
   isOpen: boolean;
-  columns: Column[];
+  columns: ColumnDef<Record<string, string>, string>[];
   setFilterState: React.Dispatch<React.SetStateAction<FilterObjType[]>>;
   currentFilter: FilterObjType;
   setFieldTypeModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -160,20 +204,30 @@ const FieldTypePopUp: React.FC<{
   if (!isOpen) return null;
   return (
     <div
-      className="fixed z-20 flex w-[130px] flex-col gap-0 rounded-sm bg-white p-3 text-[13px] shadow-md"
+      className="fixed z-20 flex w-[170px] flex-col gap-0 rounded-sm bg-white p-3 text-[13px] shadow-md"
       style={{ left: `${x}px`, top: `${y}px` }}
     >
       {columns.map((col) => (
         <div
-          className="cursor-pointer px-2 py-1 hover:bg-[#f2f2f2]"
+          className="flex cursor-pointer flex-row items-center gap-2 p-2 py-[6px] opacity-80 hover:bg-[#f2f2f2]"
           key={col.id}
           onClick={() => {
+            const firstStringFilter = filterTypesString.contains;
+            const firstNumberFilter = filterTypeNumber[">"];
+            const colType = (col.meta as MetaType).type;
+            console.log("current filter columntype:", currentFilter.columnType);
+            console.log("chosen filter columnType:", colType);
             setFieldTypeModalOpen(false);
             setFilterState((prev) => {
               const updatedFilter = {
                 ...currentFilter,
-                field: col.name,
-                columnType: col.type,
+                field: col.header as string,
+                columnType: colType,
+                ...(currentFilter.columnType !== colType
+                  ? colType === "text"
+                    ? { filterKey: "contains", ...firstStringFilter }
+                    : { filterKey: ">", ...firstNumberFilter }
+                  : {}),
               };
               const prevFilters = prev.filter(
                 (filter) => filter.id !== currentFilter.id,
@@ -182,7 +236,10 @@ const FieldTypePopUp: React.FC<{
             });
           }}
         >
-          {col.name}
+          <div id="icon-container">
+            {getIconComponent((col.meta as MetaType).icon, 15)}
+          </div>
+          <span>{col.header as string}</span>
         </div>
       ))}
     </div>
@@ -197,7 +254,7 @@ export const FilterPopUp: React.FC<{
   setViewState: React.Dispatch<React.SetStateAction<ViewObj[]>>;
   viewState: ViewObj[];
   setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  columnsState: Column[];
+  columnsState: ColumnDef<Record<string, string>, string>[];
   currentViewId: string;
 }> = ({
   x,
@@ -218,8 +275,8 @@ export const FilterPopUp: React.FC<{
   const inputDisabled = (key: string) =>
     key === "is empty" || key === "is not empty";
   const [currentChosenFilter, setCurrentFilter] = useState<FilterObjType>();
-  const [isLocked, setIsLocked] = useState<string>("");
   const [filters, setFilters] = useState<FilterObjType[]>([]);
+  const [debouncedFilter] = useDebounce(filters, 400);
   const isDisabled = () => filters.length > 2;
   useEffect(() => {
     const currentView = viewState.find((view) => view.id === currentViewId);
@@ -234,15 +291,15 @@ export const FilterPopUp: React.FC<{
           view.id === currentViewId
             ? ({
                 ...view,
-                filterState: filters,
+                filterState: debouncedFilter,
               } as ViewObj)
             : view, // Keep other views unchanged
       );
     });
     if (currentViewId) {
-      updateView({ id: currentViewId, filters });
+      updateView({ id: currentViewId, filters: debouncedFilter });
     }
-  }, [filters]);
+  }, [debouncedFilter, currentViewId, setViewState, updateView]);
   // useEffect(() => {
   //   setFilterState()
   // }, [debouncedInput])
@@ -257,29 +314,29 @@ export const FilterPopUp: React.FC<{
       }}
     >
       <div
-        className={`fixed z-20 flex h-auto flex-col rounded-md border-2 bg-white shadow-md ${filters.length > 0 ? "w-[590px]" : "w-[300px]"}`}
+        className={`fixed z-20 flex h-auto flex-col rounded-md border bg-white px-2 shadow-lg ${filters.length > 0 ? "w-[590px]" : "w-[300px]"}`}
         style={{ left: `${x}px`, top: `${y}px` }}
       >
         <div className="m-3 flex flex-col gap-4 text-[13px]">
           {filters.length > 0 ? (
-            <span className="text-[13px] text-gray-500">
+            <span className="text-[12.5px] text-gray-500">
               In this view, show records
             </span>
           ) : (
-            <span className="text-[13px] text-gray-500">
+            <span className="text-[12.5px] text-gray-500">
               No filter conditions applied
             </span>
           )}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col gap-2">
             {filters.map((filterObj) => (
               <>
                 <div
-                  className="flex flex-row items-center gap-0"
+                  className="flex w-[558px] flex-row items-center gap-0 pl-2 text-[12.5px] opacity-70"
                   key={filterObj.id}
                 >
                   {filterObj.type !== "neutral" ? (
                     <button
-                      className={`mr-2 flex h-[30px] w-[50px] items-center justify-between border px-2 ${isDisabled() ? "cursor-default" : "cursor-pointer hover:bg-[#f2f2f2]"}`}
+                      className={`mr-2 flex h-[30px] w-[60px] items-center justify-between border px-2 ${isDisabled() ? "cursor-default" : "cursor-pointer hover:bg-[#f2f2f2]"}`}
                       disabled={isDisabled()}
                       onClick={(e) => {
                         const element = e.currentTarget;
@@ -298,7 +355,7 @@ export const FilterPopUp: React.FC<{
                       )}
                     </button>
                   ) : (
-                    <span className="w-[60px] text-center">Where</span>
+                    <span className="mr-2 w-[60px] text-start">Where</span>
                   )}
                   <div
                     className="flex h-[30px] w-[120px] cursor-pointer flex-row items-center justify-between border-[1px] px-2 hover:bg-[#f2f2f2]"
@@ -373,35 +430,43 @@ export const FilterPopUp: React.FC<{
               </>
             ))}
           </div>
-          <div
-            className="flex cursor-pointer flex-row items-center gap-3 hover:text-blue-500"
-            onClick={() => {
-              const uniqueId = cuid();
-              let newFilterType = "neutral";
-              if (filters.length === 1) {
-                newFilterType = "or";
-              } else if (filters.length >= 2) {
-                newFilterType = filters[1]?.type ?? "or";
-              }
-              setFilters((prev) => {
-                const newFilter: FilterObjType = {
-                  field: "Name",
-                  key: "not",
-                  filterKey: "contains",
-                  value: null,
-                  isNegative: true,
-                  type: newFilterType,
-                  columnType: "string",
-                  id: uniqueId,
-                };
-                return [...prev, newFilter];
-              });
-            }}
-          >
-            <div id="icon-container">
-              <PiPlus size={12} />
+          <div className="flex flex-row items-center gap-4 font-semibold text-slate-700 opacity-75">
+            <div
+              className="flex cursor-pointer flex-row items-center gap-1 hover:text-blue-500"
+              onClick={() => {
+                const uniqueId = cuid();
+                let newFilterType = "neutral";
+                if (filters.length === 1) {
+                  newFilterType = "or";
+                } else if (filters.length >= 2) {
+                  newFilterType = filters[1]?.type ?? "or";
+                }
+                setFilters((prev) => {
+                  const newFilter: FilterObjType = {
+                    field: "Name",
+                    key: "contains",
+                    filterKey: "contains",
+                    value: "",
+                    isNegative: false,
+                    type: newFilterType,
+                    columnType: "text",
+                    id: uniqueId,
+                  };
+                  return [...prev, newFilter];
+                });
+              }}
+            >
+              <div id="icon-container">
+                <PiPlus size={12} />
+              </div>
+              <span className="text-[12.5px]">Add condition</span>
             </div>
-            <span>Add condition</span>
+            <div className="flex cursor-pointer flex-row items-center gap-1 hover:text-blue-500">
+              <div id="icon-container">
+                <PiPlus size={12} />
+              </div>
+              <span className="text-[12.5px]">Add condition group</span>
+            </div>
           </div>
         </div>
       </div>

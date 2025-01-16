@@ -43,7 +43,7 @@ import cuid from "cuid";
 
 const BaseLayout = (props: PropsWithChildren) => {
   return (
-    <div className="flex h-[95px] w-[336px] cursor-pointer flex-col gap-2 rounded-lg border-2 bg-white hover:shadow-md">
+    <div className="flex h-[95px] w-auto cursor-pointer flex-col gap-2 rounded-lg border-2 bg-white hover:shadow-md">
       {props.children}
     </div>
   );
@@ -79,13 +79,14 @@ export default function Home() {
   const router = useRouter();
   const { mutate: createBase } = api.base.create.useMutation();
   const { data: baseData, isLoading: baseLoading } = api.base.getAll.useQuery();
+  const user = useUser();
 
   return (
     <>
       <main className="relative flex h-screen w-screen flex-col overflow-x-hidden">
         <div className="fixed left-0 right-0 top-0 flex h-[60px] flex-row items-center justify-between border-b py-2 shadow-sm">
           <div className="ml-4 flex flex-row items-center gap-4">
-            <div id="hamburg-menu-container">
+            <div id="hamburg-menu-container" className="">
               <LuMenu size={20} />
             </div>
             <Image
@@ -120,12 +121,13 @@ export default function Home() {
               <IoIosNotificationsOutline size={20} />
             </div>
             <SignOutButton>
-              <div
-                className="cursor-pointer rounded-full bg-green-500 px-[10px] py-1"
-                onClick={() => {}}
-              >
-                D
-              </div>
+              <Image
+                src={user.user?.imageUrl ?? ""}
+                alt="Profile Image"
+                className="h-7 w-7 rounded-full"
+                width={56}
+                height={56}
+              />
             </SignOutButton>
           </div>
         </div>
@@ -247,7 +249,7 @@ export default function Home() {
           <div className="w-[47px]"></div>
           <div className="flex w-full flex-col gap-7 bg-[#f8fafb] px-11">
             <span className="pt-7 text-[27px] font-semibold">Home</span>
-            <div className="flex flex-row justify-start gap-3">
+            <div className="grid justify-start gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
               <BaseLayout>
                 <div className="flex flex-row items-center gap-2 px-3 pt-3">
                   <div id="icon-container">

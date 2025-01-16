@@ -1,4 +1,9 @@
-import type { CellContext, ColumnDef } from "@tanstack/react-table";
+import {
+  createColumnHelper,
+  type CellContext,
+  type ColumnDef,
+  type CoreInstance,
+} from "@tanstack/react-table";
 import cuid from "cuid";
 import OutsideClick from "outsideclick-react";
 import { useState } from "react";
@@ -7,10 +12,11 @@ import type { IconType } from "react-icons/lib";
 import { AiOutlineNumber } from "react-icons/ai";
 import { LuLetterText } from "react-icons/lu";
 import { api } from "~/utils/api";
+import { getIconComponent } from "~/helpers/getIconComponent";
 
 type FieldType = {
   name: string;
-  icon: IconType;
+  icon: string;
   key: string;
 };
 
@@ -32,9 +38,9 @@ const FieldTypePopUp: React.FC<{
         onClick={() => {
           setFieldPopUp(false);
           setField(() => ({
-            icon: LuLetterText,
+            icon: "LuLetterText",
             name: "Text",
-            key: "string",
+            key: "text",
           }));
         }}
       >
@@ -48,9 +54,9 @@ const FieldTypePopUp: React.FC<{
         onClick={() => {
           setFieldPopUp(false);
           setField(() => ({
-            icon: AiOutlineNumber,
+            icon: "AiOutlineNumber",
             name: "Number",
-            key: "int",
+            key: "number",
           }));
         }}
       >
@@ -68,28 +74,35 @@ export const ColumnPopUp: React.FC<{
   y: number;
   isOpen: boolean;
   tableId: string;
+  setRowState: React.Dispatch<React.SetStateAction<Record<string, string>[]>>;
   setColState: React.Dispatch<
     React.SetStateAction<ColumnDef<Record<string, string>, string>[]>
   >;
+  columns: ColumnDef<Record<string, string>, string>[];
   setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}> = ({ x, y, isOpen, tableId, setModalOpen, setColState }) => {
+}> = ({
+  x,
+  y,
+  isOpen,
+  tableId,
+  setModalOpen,
+  setColState,
+  setRowState,
+  columns,
+}) => {
   const [fieldTypePopUpModal, setFieldTypePopupModal] =
     useState<boolean>(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [colName, setColName] = useState<string>("");
+  const isValidFieldName = (name: string) =>
+    !columns.some((c) => c.header === name);
   const [fieldType, setFieldType] = useState<FieldType>({
-    icon: LuLetterText,
-    key: "string",
+    icon: "LuLetterText",
+    key: "text",
     name: "Text",
   });
-  const { mutate: newCol } = api.columns.create.useMutation({
-    onSuccess: () => {
-      toast.success("Successfully created column");
-    },
-    onError: () => {
-      toast.error("Failed to create column");
-    },
-  });
+  const columnHelper = createColumnHelper<Record<string, string>>();
+  const { mutate: newCol } = api.columns.create.useMutation();
 
   if (!isOpen) return null;
 
@@ -98,10 +111,11 @@ export const ColumnPopUp: React.FC<{
       onOutsideClick={() => {
         setModalOpen(false);
         setFieldTypePopupModal(false);
+        setColName("");
       }}
     >
       <div
-        className="fixed flex w-[331px] flex-col gap-2 rounded-md border-2 bg-white p-3 shadow-md"
+        className="fixed z-20 flex w-[350px] flex-col gap-2 rounded-md border-2 bg-white p-3 shadow-md"
         style={{ left: `${x}px`, top: `${y}px` }}
       >
         <input
@@ -120,41 +134,60 @@ export const ColumnPopUp: React.FC<{
             setFieldTypePopupModal(true);
           }}
         >
-          <fieldType.icon size={15} />
+          {getIconComponent(fieldType.icon, 15)}
           <div className="text-[13px]">{fieldType.name}</div>
         </div>
         <div className="flex flex-row items-center justify-end gap-2 pr-2 text-[12.5px]">
+          {!isValidFieldName(colName) && (
+            <div className="w-[140px] text-[12px] text-red-500 text-opacity-80">
+              {"* Please choose another fieldname"}
+            </div>
+          )}
           <span
             className="cursor-pointer rounded-md p-2 px-3 hover:bg-[#f2f2f2]"
             onClick={() => {
               setModalOpen(false);
+              setColName("");
             }}
           >
             Cancel
           </span>
-          <span
-            className="cursor-pointer rounded-md bg-blue-600 p-2 px-3 text-white"
+          <button
+            className="cursor-pointer rounded-md bg-blue-600 p-2 px-3 text-white disabled:opacity-50"
+            disabled={!isValidFieldName(colName)}
             onClick={() => {
               const uniqueCUID = cuid();
-              const newlyCreatedCol = {
+              const newlyCreatedCol = columnHelper.accessor(colName, {
                 header: colName,
-                accessor: colName,
-                cell: (cell: CellContext<Record<string, string>, string>) =>
-                  cell.getValue(),
                 id: uniqueCUID,
-              };
+                size: 180,
+                meta: {
+                  icon: fieldType.icon,
+                  type: fieldType.key,
+                  priority: "secondary",
+                  tableId: tableId,
+                },
+              });
               setColState((prev) => [...prev, newlyCreatedCol]);
+              setRowState((prev) =>
+                prev.map((theRow) => ({
+                  ...theRow,
+                  [colName]: "",
+                })),
+              );
               setModalOpen(false);
               newCol({
                 name: colName,
                 tableId,
                 id: uniqueCUID,
+                iconName: "AiOutlineNumber",
                 type: fieldType.key,
               });
+              setColName("");
             }}
           >
             Create field
-          </span>
+          </button>
         </div>
       </div>
       <OutsideClick onOutsideClick={() => setFieldTypePopupModal(false)}>

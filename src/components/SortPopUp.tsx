@@ -4,18 +4,67 @@ import cuid from "cuid";
 import OutsideClick from "outsideclick-react";
 import { useEffect, useState } from "react";
 import { PiPlus } from "react-icons/pi";
-import type { SortObject, ViewObj } from "~/helpers/types";
+import type { MetaType, SortObject, ViewObj } from "~/helpers/types";
 import { api } from "~/utils/api";
 import { RxCross1 } from "react-icons/rx";
 import { FaChevronDown } from "react-icons/fa6";
 import { getIconComponent } from "~/helpers/getIconComponent";
+import toast from "react-hot-toast";
+
+const NewSorterPopUp: React.FC<{
+  x: number;
+  y: number;
+  isOpen: boolean;
+  columns: ColumnDef<Record<string, string>, string>[];
+  setFieldPopUp: React.Dispatch<React.SetStateAction<boolean>>;
+  sorters: SortObject[];
+  setSortState: React.Dispatch<React.SetStateAction<SortObject[]>>;
+}> = ({ x, y, isOpen, setSortState, columns, setFieldPopUp, sorters }) => {
+  const filteredColumns = columns.filter(
+    (col) => !sorters.some((sorter) => sorter.field === col.header),
+  );
+  if (!isOpen) return null;
+  return (
+    <div
+      className="fixed z-20 flex w-[300px] flex-col gap-0 rounded-md border bg-white py-3 pl-3 text-[12px] shadow-lg"
+      style={{ left: `${x}px`, top: `${y}px` }}
+    >
+      <div className="flex flex-col gap-0 opacity-90">
+        {filteredColumns.map((col) => (
+          <div
+            className="flex cursor-pointer flex-row items-center gap-2 rounded-md py-1 pl-2 hover:bg-[#f2f2f2]"
+            key={col.id}
+            onClick={() => {
+              const uniqueCUID = cuid();
+              const columnMeta: MetaType = col.meta as MetaType;
+              const newSorter: SortObject = {
+                field: col.header as string,
+                id: uniqueCUID,
+                order: "asc",
+                type: columnMeta.type,
+              };
+              setFieldPopUp(false);
+              setSortState((prev) => [...prev, newSorter]);
+            }}
+          >
+            <div id="icon-container" className="text-gray-600 opacity-90">
+              {getIconComponent((col.meta as MetaType).icon, 16)}
+            </div>
+            <span className="text-[12.5px]">{col.header as string}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const FieldTypePopUp: React.FC<{
   x: number;
   y: number;
   isOpen: boolean;
-  columns: Column[];
+  columns: ColumnDef<Record<string, string>, string>[];
   setFieldPopUp: React.Dispatch<React.SetStateAction<boolean>>;
+  sorters: SortObject[];
   setSortState: React.Dispatch<React.SetStateAction<SortObject[]>>;
   currentSortObj: SortObject;
 }> = ({
@@ -25,25 +74,30 @@ const FieldTypePopUp: React.FC<{
   setSortState,
   columns,
   setFieldPopUp,
+  sorters,
   currentSortObj,
 }) => {
+  const filteredColumns = columns.filter(
+    (col) => !sorters.some((sorter) => sorter.field === col.header),
+  );
   if (!isOpen) return null;
   return (
     <div
       className="fixed z-20 flex w-[130px] flex-col gap-0 rounded-sm bg-white p-3 text-[13px] shadow-md"
       style={{ left: `${x}px`, top: `${y}px` }}
     >
-      {columns.map((col) => (
+      {filteredColumns.map((col) => (
         <div
-          className="cursor-pointer px-2 py-1 hover:bg-[#f2f2f2]"
+          className="flex cursor-pointer flex-row items-center gap-3 px-2 py-1 opacity-85 hover:bg-[#f2f2f2]"
           key={col.id}
           onClick={() => {
             setFieldPopUp(false);
+            const colMeta = col.meta as MetaType;
             setSortState((prev) => {
               const updatedSort: SortObject = {
                 ...currentSortObj,
-                field: col.name,
-                type: col.type,
+                field: col.header as string,
+                type: colMeta.type,
               };
               const prevFilters = prev.filter(
                 (filter) => filter.id !== currentSortObj.id,
@@ -52,7 +106,8 @@ const FieldTypePopUp: React.FC<{
             });
           }}
         >
-          {col.name}
+          <div id="">{getIconComponent((col.meta as MetaType).icon, 14)}</div>
+          <span>{col.header as string}</span>
         </div>
       ))}
     </div>
@@ -67,6 +122,7 @@ const OrderTypePopUp: React.FC<{
   currentSortObj: SortObject;
 }> = ({ x, y, isOpen, setSortState, setOrderPopUp, currentSortObj }) => {
   const order = ["asc", "desc"];
+  const [fieldTypeModalOpen, setFieldTypeModalOpen] = useState<boolean>(false);
   if (!isOpen) return null;
   return (
     <div
@@ -107,7 +163,7 @@ export const SortPopUp: React.FC<{
   setViewState: React.Dispatch<React.SetStateAction<ViewObj[]>>;
   setSortPopUpState: React.Dispatch<React.SetStateAction<boolean>>;
   currentViewId: string;
-  columns: Column[];
+  columns: ColumnDef<Record<string, string>, string>[];
 }> = ({
   x,
   y,
@@ -127,6 +183,11 @@ export const SortPopUp: React.FC<{
   const [sortState, setSortState] = useState<SortObject[]>([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const { mutate: updateView } = api.views.update.useMutation();
+  const [newSorterFieldChooser, setNewSorterFieldChooserState] =
+    useState<boolean>(false);
+  const filteredColumns = columns.filter(
+    (col) => !sortState.some((sorter) => sorter.field === col.header),
+  );
   useEffect(() => {
     const currentView = viewState.find((view) => view.id === currentViewId);
     if (currentView) {
@@ -145,13 +206,13 @@ export const SortPopUp: React.FC<{
     if (currentViewId) {
       updateView({ id: currentViewId, sorters: sortState });
     }
-  }, [sortState]);
+  }, [sortState, setViewState, updateView]);
   if (!isOpen) return null;
   if (sortState.length > 0) {
     return (
       <OutsideClick onOutsideClick={() => setSortPopUpState(false)}>
         <div
-          className="fixed z-20 flex w-[360px] flex-col gap-0 rounded-sm bg-white p-3 text-[12px] shadow-md"
+          className="fixed z-20 flex w-[360px] flex-col gap-0 rounded-md border bg-white p-3 text-[12px] shadow-lg"
           style={{ left: `${x}px`, top: `${y}px` }}
         >
           <span className="font-semibold text-gray-600">Sort by</span>
@@ -199,6 +260,7 @@ export const SortPopUp: React.FC<{
                       (filter) => filter.id !== sortObj.id,
                     );
                     setSortState(updatedSortState);
+                    console.log(columns);
                   }}
                 >
                   <RxCross1 size={14} className="text-gray-600" />
@@ -206,33 +268,42 @@ export const SortPopUp: React.FC<{
               </div>
             ))}
           </div>
-          <div
-            className="mt-3 flex cursor-pointer flex-row items-center gap-4 text-gray-600 hover:text-black"
-            onClick={() => {
-              const uniqueCUID = cuid();
-              const newSorter: SortObject = {
-                field: columns[0]!.name,
-                id: uniqueCUID,
-                order: "asc",
-                type: columns[0]!.type,
-              };
-              setSortState((prev) => [...prev, newSorter]);
+          <button
+            className="mt-3 flex w-24 cursor-pointer flex-row items-center gap-4 text-gray-600 hover:text-black disabled:cursor-default disabled:opacity-50"
+            onClick={(e) => {
+              const element = e.currentTarget;
+              const rect = element.getBoundingClientRect();
+              setMousePosition({ x: rect.left, y: rect.bottom + 5 });
+              setNewSorterFieldChooserState(true);
             }}
+            disabled={filteredColumns.length === 0}
           >
             <div id="icon-container">
               <PiPlus size={14} />
             </div>
             <span>Add sorter</span>
-          </div>
+          </button>
           <OutsideClick onOutsideClick={() => setFieldTypePopUpState(false)}>
             <FieldTypePopUp
               x={mousePosition.x}
               y={mousePosition.y}
               isOpen={fieldTypePopUpState}
+              sorters={sortState}
               columns={columns}
               setFieldPopUp={setFieldTypePopUpState}
               setSortState={setSortState}
               currentSortObj={currentSortObj!}
+            />
+          </OutsideClick>
+          <OutsideClick onOutsideClick={() => setFieldTypePopUpState(false)}>
+            <NewSorterPopUp
+              x={mousePosition.x}
+              y={mousePosition.y}
+              isOpen={newSorterFieldChooser}
+              sorters={sortState}
+              columns={columns}
+              setFieldPopUp={setNewSorterFieldChooserState}
+              setSortState={setSortState}
             />
           </OutsideClick>
           <OutsideClick onOutsideClick={() => setOrderTypePopUpState(false)}>
@@ -252,29 +323,34 @@ export const SortPopUp: React.FC<{
   return (
     <OutsideClick onOutsideClick={() => setSortPopUpState(false)}>
       <div
-        className="fixed z-20 flex w-[300px] flex-col gap-0 rounded-md border bg-white p-3 pl-5 text-[12px] shadow-lg"
+        className="fixed z-20 flex w-[300px] flex-col gap-0 rounded-md border bg-white py-3 pl-3 text-[12px] shadow-lg"
         style={{ left: `${x}px`, top: `${y}px` }}
       >
-        <span className="font-semibold text-gray-600">Sort by</span>
-        <div className="mb-2 border-b pt-2"></div>
-        <div className="flex flex-col gap-1 opacity-85">
+        <span className="pl-2 font-semibold text-gray-600 opacity-85">
+          Sort by
+        </span>
+        <div className="mx-2 mb-2 mr-3 border-b pt-2"></div>
+        <div className="flex flex-col gap-0 opacity-90">
           {columns.map((col) => (
             <div
-              className="flex cursor-pointer flex-row items-center gap-2 rounded-md py-1 hover:bg-[#f2f2f2]"
+              className="flex cursor-pointer flex-row items-center gap-2 rounded-md py-1 pl-2 hover:bg-[#f2f2f2]"
               key={col.id}
               onClick={() => {
                 const uniqueCUID = cuid();
+                const columnMeta: MetaType = col.meta as MetaType;
                 const newSorter: SortObject = {
-                  field: columns[0]!.name,
+                  field: col.header as string,
                   id: uniqueCUID,
                   order: "asc",
-                  type: columns[0]!.type,
+                  type: columnMeta.type,
                 };
                 setSortState((prev) => [...prev, newSorter]);
               }}
             >
-              <div id="icon-container">{getIconComponent(col.icon, 16)}</div>
-              <span className="text-[12.5px]">{col.name}</span>
+              <div id="icon-container" className="text-gray-600 opacity-90">
+                {getIconComponent((col.meta as MetaType).icon, 16)}
+              </div>
+              <span className="text-[12.5px]">{col.header as string}</span>
             </div>
           ))}
         </div>

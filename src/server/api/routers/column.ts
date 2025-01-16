@@ -27,7 +27,7 @@ export const columnRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const defaultIcon =
-        input.type === "string" ? "LuLetterText" : "AiOutlineNumber";
+        input.type === "text" ? "LuLetterText" : "AiOutlineNumber";
       const response = await ctx.db.column.create({
         data: {
           name: input.name,
@@ -41,19 +41,18 @@ export const columnRouter = createTRPCRouter({
       const rows = await ctx.db.row.findMany({
         where: { tableId: input.tableId },
       });
+      const cellData = rows.map((row) => ({
+        rowId: row.id,
+        columnId: response.id,
+        tableId: response.tableId,
+        ...(response.type === "text"
+          ? { stringValue: "" }
+          : { intValue: null }),
+      }));
 
-      for (const row of rows) {
-        await ctx.db.cell.create({
-          data: {
-            rowId: row.id,
-            columnId: response.id,
-            tableId: response.tableId,
-            ...(response.type === "string"
-              ? { stringValue: "" }
-              : { intValue: 0 }),
-          },
-        });
-      }
+      await ctx.db.cell.createMany({
+        data: cellData,
+      });
       return response;
     }),
 });

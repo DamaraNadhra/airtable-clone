@@ -10,6 +10,11 @@ import {
   type SortingState,
   getSortedRowModel,
   type OnChangeFn,
+  Cell,
+  Header,
+  Table as TanstackTable,
+  TableFeature,
+  Row,
 } from "@tanstack/react-table";
 
 import { api } from "~/utils/api";
@@ -49,7 +54,7 @@ import { FilterPopUp } from "~/components/FilterPopUp";
 import { SortPopUp } from "~/components/SortPopUp";
 import { SearchPopUp } from "~/components/SearchPopUp";
 import { useDebounce } from "use-debounce";
-import type { SortObject, ViewObj } from "~/helpers/types";
+import type { MetaType, SortObject, ViewObj } from "~/helpers/types";
 import { TableView } from "~/components/TableView";
 import { ViewPopUp } from "~/components/ViewPopUp";
 import { getIconComponent } from "~/helpers/getIconComponent";
@@ -89,7 +94,7 @@ const ViewsList = ({
   viewState,
 }: ViewsListProps) => {
   const isActive = (id: string) => currentViewId === id;
-  const { mutate: updateView } = api.views.update.useMutation();
+  const { mutate: updateView } = api.views.update.useMutation({});
   const [currentName, setCurrentName] = useState<string>("");
   useEffect(() => {
     setCurrentName(name);
@@ -107,6 +112,7 @@ const ViewsList = ({
       {isRenaming ? (
         <input
           className="w-full text-[13px]"
+          type="text"
           value={currentName}
           onChange={(e) => {
             setCurrentName(e.target.value);
@@ -224,6 +230,7 @@ const ViewLayout: NextPage = () => {
   const [selectedViewId, setSelectedViewId] = useState<string>("");
   const [viewPopUpModalOpen, setViewPopUpModalOpen] = useState<boolean>(false);
   const [debouncedSearchTerm] = useDebounce(searchState, 400);
+  const [rowSelection, setRowSelection] = useState({});
   const openPopup = () => setIsOpen(true);
   const closePopup = () => setIsOpen(false);
   const { mutate: add5k } = api.rows.add5k.useMutation({
@@ -278,8 +285,16 @@ const ViewLayout: NextPage = () => {
     }
   }, [currentViewData]);
   useEffect(() => {
+    setViewState((prev) =>
+      prev.map((view) =>
+        view.id === currentView
+          ? { ...view, searchTerm: debouncedSearchTerm }
+          : view,
+      ),
+    );
     updateView({ id: currentView!, searchTerm: debouncedSearchTerm });
-  }, [debouncedSearchTerm, currentView]);
+    console.log("updating debounced search term");
+  }, [debouncedSearchTerm, currentView, updateView]);
   const {
     data: rowsData,
     fetchNextPage,
@@ -287,7 +302,7 @@ const ViewLayout: NextPage = () => {
     isLoading: loadingRowsData,
   } = api.rows.findByTableId.useInfiniteQuery(
     {
-      limit: 100,
+      limit: 60,
       tableId,
       filters: filters ?? [],
       sorters: sorters ?? [],
@@ -330,7 +345,6 @@ const ViewLayout: NextPage = () => {
   const { mutate: updateCell } = api.cells.update.useMutation();
   const { mutate: createTable } = api.table.create.useMutation({
     onSuccess: ({ table, viewId }) => {
-      toast.success("Successfully created table");
       void router.push(`/${baseId}/${table}/${viewId}`);
     },
   });
@@ -339,6 +353,69 @@ const ViewLayout: NextPage = () => {
       void router.push(`/${baseId}/${tableId}/${createdView.id}`);
     },
   });
+  const handleHighLightCell = (cell: Cell<Record<string, string>, unknown>) => {
+    let accumulatedBg = "";
+    const isFiltered = filters.some(
+      (filter) => filter.field === cell.column.columnDef.header,
+    );
+    const isSorted = sorters.some(
+      (sorter) => sorter.field === cell.column.columnDef.header,
+    );
+    const cellValue = cell.getValue();
+    if (
+      (typeof cellValue === "string" || typeof cellValue === "number") &&
+      debouncedSearchTerm &&
+      String(cellValue).includes(debouncedSearchTerm)
+    ) {
+      return "bg-[#ffd17e]";
+    }
+    if (filters.length === 0 && sorters.length === 0 && searchState === "") {
+      return "group-hover:bg-[#f2f2f2] bg-white";
+    }
+    if (isFiltered && !isSorted) {
+      accumulatedBg += "bg-[#e9fbed] group-hover:bg-[#e3f4e7] ";
+    }
+    if (isSorted && !isFiltered) {
+      accumulatedBg += "bg-[#fff2eb] group-hover:bg-[#f9ece5]";
+    }
+    if (isSorted && isFiltered) {
+      accumulatedBg += "bg-[#e9fbed] group-hover:bg-[#e3f4e7]";
+    }
+    if (!isSorted && !isFiltered) {
+      accumulatedBg +=
+        "group-hover:bg-[#f8f8f8] group-hover:bg-opacity-90 bg-white";
+    }
+    return accumulatedBg;
+  };
+  const handleHighLightHeader = (
+    header: Header<Record<string, string>, unknown>,
+  ) => {
+    let accumulatedBg = "";
+    const isFiltered = filters.some(
+      (filter) => filter.field === header.column.columnDef.header,
+    );
+    const isSorted = sorters.some(
+      (sorter) => sorter.field === header.column.columnDef.header,
+    );
+
+    if (filters.length === 0 && sorters.length === 0 && searchState === "") {
+      return "bg-[#f2f2f2] hover:bg-[#fafafa] hover:bg-opacity-80";
+    }
+
+    if (isFiltered && !isSorted) {
+      accumulatedBg += "bg-[#eff5f1]";
+    }
+    if (isSorted && !isFiltered) {
+      accumulatedBg += "bg-[#fcf8f6]";
+    }
+    if (isSorted && isFiltered) {
+      accumulatedBg += "bg-[#eff5f1]";
+    }
+    if (!isSorted && !isFiltered) {
+      accumulatedBg += "bg-[#f2f2f2] hover:bg-[#fafafa] hover:bg-opacity-50";
+    }
+    return accumulatedBg;
+  };
 
   const flattenedRows = useMemo(
     () =>
@@ -346,7 +423,7 @@ const ViewLayout: NextPage = () => {
         page.rows.map((row) => ({
           ...row.cells.reduce(
             (acc, cell) => {
-              if (cell.column.type === "string") {
+              if (cell.column.type === "text") {
                 acc[cell.column.name] = cell.stringValue ?? "";
               } else {
                 acc[cell.column.name] = cell.intValue ?? "";
@@ -388,20 +465,89 @@ const ViewLayout: NextPage = () => {
   useEffect(() => {
     fetchMoreOnBottomReached(tableContainerRef.current);
   }, [fetchMoreOnBottomReached]);
-  type MetaType = {
-    icon?: string;
-  };
 
+  type TableMetaType = {
+    updateCellData: (
+      rowIndex: number,
+      colId: string,
+      columnHeader: string,
+      value: string,
+      rowId: string,
+    ) => void;
+  };
+  const EditableCell: React.FC<{
+    getValue: () => unknown;
+    rowIndex: number;
+    rowId: string;
+    columnId: string;
+    table: TanstackTable<Record<string, string>>;
+    columnHeader: string;
+  }> = ({ getValue, rowIndex, rowId, columnId, table, columnHeader }) => {
+    const initialValue = getValue() as string;
+    const [value, setValue] = React.useState<string>(initialValue);
+
+    // Call updateData when the input loses focus
+    const onBlur = () => {
+      (table.options.meta as TableMetaType).updateCellData(
+        rowIndex,
+        columnId,
+        value,
+        columnHeader,
+        rowId,
+      );
+    };
+
+    // Sync state when external value changes
+    React.useEffect(() => {
+      setValue(initialValue);
+    }, [initialValue]);
+
+    return (
+      <input
+        className={`focus:outline-5 h-[32px] w-full bg-transparent pl-2 text-[13px] text-gray-800 text-opacity-95 focus:outline-blue-500`}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={onBlur}
+      />
+    );
+  };
+  const defaultColumn: Partial<ColumnDef<Record<string, string>>> = {
+    cell: ({
+      getValue,
+      row,
+      column: {
+        id,
+        columnDef: { header },
+      },
+      table,
+    }) => {
+      return (
+        <EditableCell
+          rowId={row.id}
+          getValue={getValue}
+          rowIndex={row.index}
+          columnId={id}
+          columnHeader={header as string}
+          table={table}
+        />
+      );
+    },
+  };
+  type rowSelectionMeta = {
+    isUtilityColumn: boolean;
+  };
   useEffect(() => {
     if (!loadingColumnData && columnData) {
       const updatedColumns = columnData.map((column) => {
         return columnHelper.accessor(column.name, {
           header: column.name,
-          cell: (info) => info.getValue(),
           id: column.id,
           size: 180,
           meta: {
             icon: column.icon,
+            type: column.type,
+            priority: column.priority,
+            tableId: column.tableId,
           },
         });
       });
@@ -412,10 +558,37 @@ const ViewLayout: NextPage = () => {
   const table = useReactTable({
     data: rowsTemp,
     columns,
+    defaultColumn,
     getRowId: (row) => row.id!,
+    enableRowSelection: true, //enable row selection for all rows
+    // enableRowSelection: row => row.original.age > 18, // or enable row selection conditionally per row
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualSorting: true,
+    state: { rowSelection: rowSelection },
+    meta: {
+      updateCellData: (
+        rowIndex: number,
+        colId: string,
+        value: string,
+        columnHeader: string,
+        rowId: string,
+      ) => {
+        setRows((old) =>
+          old.map((row, index) => {
+            if (index === rowIndex) {
+              updateCell({ columnId: colId, newValue: value, rowId });
+              return {
+                ...old[rowIndex]!,
+                [columnHeader]: value,
+              };
+            }
+            return row;
+          }),
+        );
+      },
+    },
   });
 
   const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
@@ -559,15 +732,15 @@ const ViewLayout: NextPage = () => {
         </div>
         <div className="mt-[32px]">
           <div className="relative">
-            <div className="absolute left-0 right-0 top-[44px] z-0 h-[32px] w-full bg-white"></div>
+            <div className="absolute left-0 right-0 top-[44px] z-0 h-[32px] w-full border-b-[1.5px] border-black border-opacity-10 bg-white"></div>
             <div
               id="view-bar-container"
-              className="absolute left-0 right-0 top-0 flex h-[44px] w-full flex-none flex-row justify-between border-b bg-white text-black"
+              className="absolute left-0 right-0 top-0 flex h-[44px] w-full flex-none flex-row justify-between border-b-[1.2px] border-black border-opacity-20 bg-white text-black shadow-sm"
             >
               <div className="ml-3 flex flex-row items-center justify-between gap-2">
                 <div
                   id="view"
-                  className={`flex flex-row items-center justify-normal gap-1 rounded-sm ${loadingViewsState ? "bg-white" : "bg-[#f2f2f2]"} px-2 py-1 text-[12.5px] font-[500] hover:ring-1 hover:ring-gray-300`}
+                  className={`flex flex-row items-center justify-normal gap-1 rounded-[4px] ${loadingViewsState ? "bg-white" : "bg-[#f2f2f2]"} px-2 py-1 text-[12.5px] font-[500] hover:ring-2 hover:ring-inset hover:ring-gray-300`}
                 >
                   <RxHamburgerMenu size={15} />
                   <span>Views</span>
@@ -580,18 +753,18 @@ const ViewLayout: NextPage = () => {
                 ) : (
                   <>
                     <div className="h-5 w-[1px] border-r-[1px] border-black opacity-30"></div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-sm px-2 py-1 text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
+                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-sm px-2 py-1 text-[12.5px] font-[500] transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <VscTable className="text-[#166EE1]" size={17} />
                       <span className="ml-1">Grid view</span>
                       <PiUsersThree size={17} />
                       <IoChevronDownSharp size={15} />
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 hover:bg-[#f2f2f2]">
+                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <BsEyeSlash size={15} />
                       <span>Hide fields</span>
                     </div>
                     <div
-                      className={`flex w-auto cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 ${filters.length > 0 ? "bg-[#caf4d3] hover:outline hover:outline-2 hover:outline-gray-200" : "hover:bg-[#f2f2f2]"}`}
+                      className={`flex w-auto cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[12.5px] text-gray-800 ${filters.length > 0 ? "bg-[#caf4d3] hover:ring-2 hover:ring-inset hover:ring-[#b5dbbd]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
                       onClick={(e) => {
                         e.preventDefault();
                         const element = e.currentTarget;
@@ -603,16 +776,16 @@ const ViewLayout: NextPage = () => {
                       <IoFilterOutline size={15} />
                       <span className="w-auto">
                         {filters.length > 0
-                          ? `Filtered by ${filters.map((fil) => fil.field).join(", ")}`
+                          ? `Filtered by ${Array.from(new Set(filters.map((fil) => fil.field))).join(", ")}`
                           : "Filter"}
                       </span>
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 hover:bg-[#f2f2f2]">
+                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <AiOutlineGroup size={15} />
                       <span>Group</span>
                     </div>
                     <div
-                      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 ${sorters.length > 0 ? "bg-[#ffe0cd] hover:outline hover:outline-2 hover:outline-gray-200" : "hover:bg-[#f2f2f2]"}`}
+                      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[12.5px] text-gray-800 ${sorters.length > 0 ? "bg-[#ffe0cd] hover:ring-2 hover:ring-inset hover:ring-[#e5c9b8]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
                       onClick={(e) => {
                         e.preventDefault();
                         const element = e.currentTarget;
@@ -628,14 +801,21 @@ const ViewLayout: NextPage = () => {
                           : "Sort"}
                       </span>
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 hover:bg-[#f2f2f2]">
+                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <PiPaintBucket size={15} />
                       <span>Color</span>
                     </div>
-                    <div className="flex cursor-pointer items-center justify-normal rounded-sm px-2 py-1 text-[12.5px] text-gray-800 hover:bg-[#f2f2f2]">
+                    <div className="flex cursor-pointer items-center justify-normal rounded-sm px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <RxRows size={13} />
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 hover:bg-[#f2f2f2]">
+                    <div
+                      className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]"
+                      onClick={() =>
+                        console.log(
+                          viewsState.find((v) => v.id === currentView),
+                        )
+                      }
+                    >
                       <PiArrowSquareOut size={15} />
                       <span>Share and sync</span>
                     </div>
@@ -845,59 +1025,64 @@ const ViewLayout: NextPage = () => {
                   >
                     {table.getHeaderGroups().map((headerGroup) => (
                       <Box className="table-header-group" key={headerGroup.id}>
-                        <Box
-                          id="select-all"
-                          className="flex h-[32px] w-14 items-center justify-start bg-[#f2f2f2]"
-                        >
+                        <Box className="table-cell w-14 border-y-[1.2px] border-l-[1.2px] border-black border-opacity-10 bg-[#f2f2f2] align-middle">
                           <input
-                            id="default-checkbox"
+                            id="select-all-checkbox"
                             type="checkbox"
                             value=""
-                            checked={false}
-                            className="ml-[13px] h-3 w-3 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
+                            checked={table.getIsAllRowsSelected()}
+                            onChange={table.getToggleAllRowsSelectedHandler()}
+                            className="border-gray ml-3 h-3 w-3 rounded bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                           />
                         </Box>
                         {headerGroup.headers.map((header) => (
                           <Box
-                            className="table-cell border-y border-r bg-[#f2f2f2] text-center align-middle text-[13px] hover:bg-[#fafafa] hover:bg-opacity-50"
-                            w={header.getSize()}
+                            className={`table-cell border-y-[1.2px] border-r-[1.2px] border-black border-opacity-10 text-start align-middle text-[13px] ${handleHighLightHeader(header)}`}
                             height="32px"
                             key={header.id}
+                            style={{
+                              minWidth: header.getSize(),
+                            }}
                           >
-                            {header.isPlaceholder ? null : (
-                              <Box className="flex flex-row justify-between">
-                                <Box className="flex flex-row items-center gap-2 pl-2">
-                                  {header.column.columnDef.meta && (
-                                    <Box className="opacity-50">
-                                      {getIconComponent(
-                                        (
-                                          header.column.columnDef
-                                            .meta as MetaType
-                                        ).icon!,
-                                      )}
-                                    </Box>
-                                  )}
-                                  <Box className="text-[12.5px] opacity-80">
-                                    {flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext(),
+                            <Box className="flex flex-row justify-between">
+                              <Box className="flex flex-row items-center gap-2 pl-2">
+                                {header.column.columnDef.meta && (
+                                  <Box className="opacity-50">
+                                    {getIconComponent(
+                                      (header.column.columnDef.meta as MetaType)
+                                        .icon ?? "",
                                     )}
                                   </Box>
-                                </Box>
-                                <Box className="flex cursor-pointer items-center rounded-full px-2 opacity-50">
-                                  <FaChevronDown size={12} />
+                                )}
+                                <Box className="text-[12.5px] opacity-80">
+                                  {flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext(),
+                                  )}
                                 </Box>
                               </Box>
-                            )}
+                              <Box className="flex cursor-pointer items-center rounded-full px-2 opacity-50">
+                                <FaChevronDown size={12} />
+                              </Box>
+                            </Box>
                           </Box>
                         ))}
                         <Box
-                          className="table-cell pl-9 w-[94px] cursor-pointer align-middle border bg-[#f2f2f2] hover:bg-opacity-20"
+                          className="table-cell w-[94px] cursor-pointer border-[1.2px] border-black border-opacity-10 bg-[#f2f2f2] pl-9 align-middle hover:bg-opacity-20"
                           height={"32px"}
+                          onContextMenu={() => console.log(rowsTemp)}
                           onClick={(e) => {
                             e.preventDefault();
                             if (e.button === 0) {
-                              setMousePosition({ x: e.clientX, y: e.clientY });
+                              const isCloseToRight =
+                                e.clientX >= innerWidth - 300;
+                              console.log(isCloseToRight);
+                              console.log(e.clientX);
+                              console.log(innerWidth);
+                              setMousePosition({
+                                x: isCloseToRight ? e.clientX - 150 : e.clientX,
+                                y: e.clientY,
+                              });
                               setColumnPopUpOpen(true);
                             }
                           }}
@@ -918,7 +1103,7 @@ const ViewLayout: NextPage = () => {
                       return (
                         <Box
                           data-index={virtualRow.index}
-                          className="group absolute table-row hover:bg-[#f8f8f8]"
+                          className="group absolute table-row bg-[#f8f8f8]"
                           ref={(node: Element | null) =>
                             rowVirtualizer.measureElement(node)
                           }
@@ -930,60 +1115,29 @@ const ViewLayout: NextPage = () => {
                             transform: `translateY(${virtualRow.start}px)`,
                           }}
                         >
-                          <Box className="table-cell h-[32px] w-14 border-y bg-white px-[21px] text-start align-middle group-hover:bg-inherit">
+                          <Box className="table-cell h-[32px] w-14 border-y-[1.1px] border-black border-opacity-10 bg-white px-[21px] text-start align-middle group-hover:bg-inherit">
                             <input
-                              id="default-checkbox"
+                              id="cell-checkbox"
                               type="checkbox"
-                              value=""
-                              checked={false}
-                              className="-ml-2 hidden h-3 w-3 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 group-hover:flex dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
+                              checked={row!.getIsSelected()}
+                              className="peer -ml-2 hidden h-3 w-3 rounded border-y-[1.1px] border-r-[1.1px] border-black border-opacity-20 bg-gray-100 text-blue-600 checked:flex group-hover:flex dark:border-gray-600 dark:bg-gray-700"
+                              onChange={row!.getToggleSelectedHandler()}
                             />
-                            <span className="-ml-2 text-[12px] opacity-50 group-hover:hidden">
+                            <span className="-ml-2 text-[12px] opacity-50 group-hover:hidden peer-checked:hidden">
                               {virtualRow.index + 1}
                             </span>
                           </Box>
                           {row?.getVisibleCells().map((cell) => (
                             <Box
-                              className="table-cell border-y border-r align-middle text-sm"
-                              w={180}
+                              className={`border-black-4 table-cell border-y-[1.1px] border-r-[1.1px] border-black border-opacity-10 align-middle text-sm ${handleHighLightCell(cell)}`}
+                              w={cell.column.getSize()}
                               height="32px"
                               key={cell.id}
                             >
-                              <input
-                                type="text"
-                                value={(cell.getValue() as string) ?? ""}
-                                className={`h-[33px] w-full cursor-default rounded-sm p-1 outline-none focus:outline-none focus:ring-2 focus:ring-blue-500 group-hover:bg-inherit`}
-                                onContextMenu={(e) => {
-                                  e.preventDefault();
-                                  setMousePosition({
-                                    x: e.clientX,
-                                    y: e.clientY,
-                                  });
-                                  setPopUpId(row.id);
-                                  openPopup();
-                                }}
-                                onChange={(e) => {
-                                  setRows((prevData) =>
-                                    prevData.map((theRow) =>
-                                      theRow.id === row.id
-                                        ? {
-                                            ...theRow,
-                                            [cell.column.columnDef
-                                              .header as string]:
-                                              e.target.value,
-                                          }
-                                        : theRow,
-                                    ),
-                                  );
-                                }}
-                                onBlur={() => {
-                                  updateCell({
-                                    columnId: cell.column.id,
-                                    rowId: cell.row.id,
-                                    newValue: cell.getValue() as string,
-                                  });
-                                }}
-                              />
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
                             </Box>
                           ))}
                         </Box>
@@ -991,23 +1145,28 @@ const ViewLayout: NextPage = () => {
                     })}
                   </Box>
                   <div
-                    className="sticky top-0 flex h-[32px] w-full cursor-pointer border bg-white text-black hover:bg-[#f2f2f2]"
+                    className="flex h-[32px] cursor-pointer border bg-white text-black hover:bg-[#f2f2f2]"
+                    style={{
+                      width: table.getTotalSize() + 56,
+                    }}
                     onClick={() => {
+                      const uniqueCUID = cuid();
                       const createdRow = columns.reduce(
                         (acc, col) => {
                           const header = col.header;
                           acc[header as string] = "";
                           return acc;
                         },
-                        {} as Record<string, string>,
+                        { id: uniqueCUID } as Record<string, string>,
                       );
                       setRows((prevData) => [...prevData, createdRow]);
                       newRow({
                         tableId,
+                        id: uniqueCUID,
                       });
                     }}
                   >
-                    <div className="flex h-full w-[149px] items-center border-r pl-2">
+                    <div className="flex h-full w-[236px] items-center border-r pl-2">
                       <PiPlus size={17} />
                     </div>
                   </div>
@@ -1017,7 +1176,7 @@ const ViewLayout: NextPage = () => {
                       add5k({ tableId });
                     }}
                   >
-                    ADD 5K RECORDS
+                    ADD 15K RECORDS
                   </div>
                   <PopUp
                     isOpen={isOpen}
@@ -1054,13 +1213,15 @@ const ViewLayout: NextPage = () => {
           <ColumnPopUp
             isOpen={columnPopUp}
             tableId={tableId}
+            columns={columns}
             setColState={setColumns}
+            setRowState={setRows}
             x={mousePosition.x}
             y={mousePosition.y}
             setModalOpen={setColumnPopUpOpen}
           />
           <FilterPopUp
-            columnsState={columnData!}
+            columnsState={columns}
             isOpen={filterPopUpState}
             x={mousePosition.x}
             y={mousePosition.y}
@@ -1072,7 +1233,7 @@ const ViewLayout: NextPage = () => {
           />
           <SortPopUp
             viewState={viewsState}
-            columns={columnData!}
+            columns={columns}
             isOpen={sortPopUpState}
             x={mousePosition.x}
             y={mousePosition.y}
@@ -1109,28 +1270,5 @@ const ViewLayout: NextPage = () => {
     </>
   );
 };
-
-// export const getStaticProps: GetStaticProps = async (context) => {
-//   const ssg = generateSSGHelper();
-//   const baseId = context.params?.id;
-//   const tableId = context.params?.tableid;
-//   if (typeof tableId !== "string" || typeof baseId !== "string")
-//     throw new Error("no id");
-
-//   await ssg.base.getBaseById.prefetch({ baseId });
-//   await ssg.table.getAllTablesByBaseId.prefetch({ baseId });
-
-//   return {
-//     props: {
-//       trpcState: ssg.dehydrate(),
-//       baseId,
-//       tableId,
-//     },
-//   };
-// };
-
-// export const getStaticPaths = () => {
-//   return { paths: [], fallback: "blocking" };
-// };
 
 export default ViewLayout;
