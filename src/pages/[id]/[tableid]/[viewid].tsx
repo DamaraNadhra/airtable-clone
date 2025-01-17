@@ -378,7 +378,7 @@ const ViewLayout: NextPage = () => {
     );
     updateView({ id: currentView!, searchTerm: debouncedSearchTerm });
     console.log("updating debounced search term");
-  }, [debouncedSearchTerm, currentView, updateView]);
+  }, [debouncedSearchTerm, updateView]);
   const {
     data: rowsData,
     fetchNextPage,
@@ -1344,7 +1344,7 @@ const ViewLayout: NextPage = () => {
                     </div>
                   </div>
                   <div
-                    className="flex h-[32px] w-[149px] text-[14px] p-2 cursor-pointer items-center rounded-md bg-white text-red-500 hover:text-red-400"
+                    className="flex h-[32px] w-[149px] cursor-pointer items-center rounded-md bg-white p-2 text-[14px] text-red-500 hover:text-red-400"
                     onClick={() => {
                       const seed =
                         Math.floor(Math.random() * (300 - 1 + 1)) + 1;

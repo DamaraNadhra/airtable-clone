@@ -299,7 +299,7 @@ export const FilterPopUp: React.FC<{
     if (currentViewId) {
       updateView({ id: currentViewId, filters: debouncedFilter });
     }
-  }, [debouncedFilter, currentViewId, setViewState, updateView]);
+  }, [debouncedFilter, setViewState, updateView]);
   // useEffect(() => {
   //   setFilterState()
   // }, [debouncedInput])
