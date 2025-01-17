@@ -7,6 +7,17 @@ export type SortObject = {
   type: string;
 };
 
+export type FilterObj = {
+  field: string;
+  key: string;
+  filterKey: string;
+  value: string | null;
+  isNegative: boolean;
+  type: string;
+  columnType: string;
+  id: string;
+};
+
 export type Json =
   | string
   | number

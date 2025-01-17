@@ -16,7 +16,7 @@ import {
   TableFeature,
   Row,
 } from "@tanstack/react-table";
-
+import { CiChat1 } from "react-icons/ci";
 import { api } from "~/utils/api";
 import React, { useEffect, useMemo, useState } from "react";
 import { Box } from "@chakra-ui/react";
@@ -24,16 +24,27 @@ import { IoChevronDownSharp } from "react-icons/io5";
 import { FiArrowLeft, FiPlus } from "react-icons/fi";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { VscTable } from "react-icons/vsc";
-import { PiCalendar, PiPlus, PiUsersThree } from "react-icons/pi";
+import {
+  PiArrowDown,
+  PiArrowLeft,
+  PiArrowUp,
+  PiBell,
+  PiCalendar,
+  PiCopy,
+  PiPencilSimple,
+  PiPlus,
+  PiUsers,
+  PiUsersThree,
+} from "react-icons/pi";
 import { IoFilterOutline } from "react-icons/io5";
 import type { Base, Table } from "@prisma/client";
 import { TbArrowsSort } from "react-icons/tb";
-import { AiOutlineGroup } from "react-icons/ai";
+import { AiOutlineExpandAlt, AiOutlineGroup } from "react-icons/ai";
 import { PiPaintBucket } from "react-icons/pi";
 import { RxRows } from "react-icons/rx";
 import { PiArrowSquareOut } from "react-icons/pi";
 import toast from "react-hot-toast";
-import { BsEyeSlash } from "react-icons/bs";
+import { BsChevronDown, BsEyeSlash } from "react-icons/bs";
 import { HiMagnifyingGlass } from "react-icons/hi2";
 import { RiGalleryView2 } from "react-icons/ri";
 import { PiKanban } from "react-icons/pi";
@@ -41,6 +52,7 @@ import { FaRegListAlt } from "react-icons/fa";
 import {
   FaChartGantt,
   FaChevronDown,
+  FaClockRotateLeft,
   FaRegStar,
   FaWpforms,
 } from "react-icons/fa6";
@@ -54,23 +66,19 @@ import { FilterPopUp } from "~/components/FilterPopUp";
 import { SortPopUp } from "~/components/SortPopUp";
 import { SearchPopUp } from "~/components/SearchPopUp";
 import { useDebounce } from "use-debounce";
-import type { MetaType, SortObject, ViewObj } from "~/helpers/types";
+import type { FilterObj, MetaType, SortObject, ViewObj } from "~/helpers/types";
 import { TableView } from "~/components/TableView";
 import { ViewPopUp } from "~/components/ViewPopUp";
 import { getIconComponent } from "~/helpers/getIconComponent";
+import { IoIosHelpCircleOutline } from "react-icons/io";
+import Image from "next/image";
+import { useUser } from "@clerk/nextjs";
+import { ColumnOptionsPopUp } from "~/components/ColumnOptionsPopUp";
+import { faker } from "@faker-js/faker";
+import OutsideClick from "outsideclick-react";
+import { LuLink } from "react-icons/lu";
 
 const columnHelper = createColumnHelper<Record<string, string>>();
-
-type FilterObj = {
-  field: string;
-  key: string;
-  filterKey: string;
-  value: string | null;
-  isNegative: boolean;
-  type: string;
-  columnType: string;
-  id: string;
-};
 
 interface ViewsListProps {
   name: string;
@@ -101,7 +109,7 @@ const ViewsList = ({
   }, [viewState, name]);
   return (
     <div
-      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[3px] ${isActive(id) ? "bg-[#C4ECFFB3]" : "bg-white hover:bg-[#f2f2f2]"} group px-2 py-2 text-[12.5px] font-[500]`}
+      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[3px] ${isActive(id) ? "bg-[#C4ECFFB3]" : "bg-white hover:bg-[#f2f2f2]"} group px-2 py-[6px] text-[13px] font-[500]`}
     >
       <div className="w-5 group-hover:hidden">
         <VscTable className="text-[#166EE1]" size={17} />
@@ -141,7 +149,8 @@ const PopUp: React.FC<{
   isOpen: boolean;
   setData: React.Dispatch<React.SetStateAction<Record<string, string>[]>>;
   record: string;
-}> = ({ x, y, isOpen, setData, record }) => {
+  closePopUp: () => void;
+}> = ({ x, y, isOpen, setData, record, closePopUp }) => {
   if (!isOpen) return null;
 
   const ctx = api.useUtils();
@@ -160,20 +169,94 @@ const PopUp: React.FC<{
   };
 
   return (
-    <div
-      className="fixed rounded-md bg-white p-2 shadow-lg"
-      style={{ left: `${x}px`, top: `${y}px` }}
-    >
-      <span
-        className="cursor-pointer px-1 py-1 text-sm text-red-500 hover:bg-[#f8f8f8]"
-        onClick={(e) => {
-          e.preventDefault();
-          deleteRecord();
-        }}
+    <OutsideClick onOutsideClick={() => closePopUp()}>
+      <div
+        className="fixed z-50 flex h-[381px] w-[240px] flex-col rounded-md border-2 bg-white p-3 shadow-md"
+        style={{ left: `${x}px`, top: `${y}px` }}
       >
-        Delete record
-      </span>
-    </div>
+        <span className="flex cursor-pointer flex-row items-center gap-3 rounded-[4px] px-2 py-[7px] text-sm hover:bg-[#f2f2f2]">
+          <div id="icon-container" className="text-gray-800 text-opacity-75">
+            <PiArrowUp size={15} />
+          </div>
+          <span className="text-[13px] text-gray-900 text-opacity-90">
+            Insert record above
+          </span>
+        </span>
+        <span className="flex cursor-pointer flex-row items-center gap-3 rounded-[4px] px-2 py-[7px] text-sm hover:bg-[#f2f2f2]">
+          <div id="icon-container" className="text-gray-800 text-opacity-75">
+            <PiArrowDown size={15} />
+          </div>
+          <span className="text-[13px] text-gray-900 text-opacity-90">
+            Insert record below
+          </span>
+        </span>
+        <div className="mx-2 my-2 border-b opacity-80"></div>
+        <span className="flex cursor-pointer flex-row items-center gap-3 rounded-[4px] px-2 py-[7px] text-sm hover:bg-[#f2f2f2]">
+          <div id="icon-container" className="text-gray-800 text-opacity-75">
+            <PiCopy size={15} />
+          </div>
+          <span className="text-[13px] text-gray-900 text-opacity-90">
+            Duplicate record
+          </span>
+        </span>
+        <span className="flex cursor-pointer flex-row items-center gap-3 rounded-[4px] px-2 py-[7px] text-sm hover:bg-[#f2f2f2]">
+          <div id="icon-container" className="text-gray-800 text-opacity-75">
+            <PiPaintBucket size={15} />
+          </div>
+          <span className="text-[13px] text-gray-900 text-opacity-90">
+            Apply Template
+          </span>
+        </span>
+        <span className="flex cursor-pointer flex-row items-center gap-3 rounded-[4px] px-2 py-[7px] text-sm hover:bg-[#f2f2f2]">
+          <div id="icon-container" className="text-gray-800 text-opacity-75">
+            <AiOutlineExpandAlt size={15} />
+          </div>
+          <span className="text-[13px] text-gray-900 text-opacity-90">
+            Expand record
+          </span>
+        </span>
+        <div className="mx-2 my-2 border-b opacity-80"></div>
+        <span className="flex cursor-pointer flex-row items-center gap-2 rounded-[4px] px-2 py-[7px] text-sm hover:bg-[#f2f2f2]">
+          <div id="icon-container" className="text-gray-800 text-opacity-75">
+            <CiChat1 size={18} />
+          </div>
+          <span className="text-[13px] text-gray-900 text-opacity-90">
+            Add comment
+          </span>
+        </span>
+        <span className="flex cursor-pointer flex-row items-center gap-3 rounded-[4px] px-2 py-[7px] text-sm hover:bg-[#f2f2f2]">
+          <div id="icon-container" className="text-gray-800 text-opacity-75">
+            <LuLink size={15} />
+          </div>
+          <span className="text-[13px] text-gray-900 text-opacity-90">
+            Copy cell URL
+          </span>
+        </span>
+        <span className="flex cursor-pointer flex-row items-center gap-3 rounded-[4px] px-2 py-[7px] text-sm hover:bg-[#f2f2f2]">
+          <div id="icon-container" className="text-gray-800 text-opacity-75">
+            <PiCopy size={15} />
+          </div>
+          <span className="text-[13px] text-gray-900 text-opacity-90">
+            Send record
+          </span>
+        </span>
+        <div className="mx-2 my-2 border-b opacity-80"></div>
+        <span
+          className="flex cursor-pointer flex-row items-center gap-3 rounded-[4px] px-2 py-[7px] text-sm hover:bg-[#f2f2f2]"
+          onClick={() => {
+            closePopUp();
+            deleteRecord();
+          }}
+        >
+          <div id="icon-container" className="text-gray-800 text-opacity-75">
+            <PiCopy size={15} />
+          </div>
+          <span className="text-[13px] text-red-500 text-opacity-90">
+            Delete record
+          </span>
+        </span>
+      </div>
+    </OutsideClick>
   );
 };
 
@@ -196,6 +279,7 @@ const ViewLayout: NextPage = () => {
   useEffect(() => {
     console.log("current table id: ", tableId);
   }, [tableId]);
+  const { user } = useUser();
   const [currentTableId, setTableId] = useState<string>(tableId);
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -231,12 +315,12 @@ const ViewLayout: NextPage = () => {
   const [viewPopUpModalOpen, setViewPopUpModalOpen] = useState<boolean>(false);
   const [debouncedSearchTerm] = useDebounce(searchState, 400);
   const [rowSelection, setRowSelection] = useState({});
+  const [columnOptionPopUp, setColumnOptionPopUp] = useState<boolean>(false);
   const openPopup = () => setIsOpen(true);
   const closePopup = () => setIsOpen(false);
   const { mutate: add5k } = api.rows.add5k.useMutation({
     onSuccess: () => {
       toast.success("Successfully added 5k records");
-      void ctx.rows.invalidate();
     },
   });
   const { data: viewsData, isLoading: loadingViews } =
@@ -451,7 +535,7 @@ const ViewLayout: NextPage = () => {
         const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
         //once the user has scrolled within 500px of the bottom of the table, fetch more data if we can
         if (
-          scrollHeight - scrollTop - clientHeight < 500 &&
+          scrollHeight - scrollTop - clientHeight < 800 &&
           !isFetching &&
           totalFetched < totalDBRowCount
         ) {
@@ -472,28 +556,39 @@ const ViewLayout: NextPage = () => {
       colId: string,
       columnHeader: string,
       value: string,
-      rowId: string,
+      cellId: string,
+      colType: string,
     ) => void;
   };
   const EditableCell: React.FC<{
     getValue: () => unknown;
     rowIndex: number;
-    rowId: string;
+    cellId: string;
     columnId: string;
     table: TanstackTable<Record<string, string>>;
     columnHeader: string;
-  }> = ({ getValue, rowIndex, rowId, columnId, table, columnHeader }) => {
+    meta: MetaType;
+  }> = ({
+    getValue,
+    rowIndex,
+    meta,
+    cellId,
+    columnId,
+    table,
+    columnHeader,
+  }) => {
     const initialValue = getValue() as string;
     const [value, setValue] = React.useState<string>(initialValue);
-
+    const colType = meta.type;
     // Call updateData when the input loses focus
     const onBlur = () => {
       (table.options.meta as TableMetaType).updateCellData(
         rowIndex,
         columnId,
         value,
+        colType,
         columnHeader,
-        rowId,
+        cellId,
       );
     };
 
@@ -504,8 +599,9 @@ const ViewLayout: NextPage = () => {
 
     return (
       <input
-        className={`focus:outline-5 h-[32px] w-full bg-transparent pl-2 text-[13px] text-gray-800 text-opacity-95 focus:outline-blue-500`}
+        className={`focus:outline-5 no-stepper h-[32px] w-full cursor-default bg-transparent pl-2 text-[13px] text-gray-800 text-opacity-95 focus:outline-blue-500`}
         value={value}
+        type={meta.type}
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
       />
@@ -513,22 +609,24 @@ const ViewLayout: NextPage = () => {
   };
   const defaultColumn: Partial<ColumnDef<Record<string, string>>> = {
     cell: ({
+      cell: { id: cellId },
       getValue,
       row,
       column: {
         id,
-        columnDef: { header },
+        columnDef: { header, meta },
       },
       table,
     }) => {
       return (
         <EditableCell
-          rowId={row.id}
+          cellId={row.id}
           getValue={getValue}
           rowIndex={row.index}
           columnId={id}
           columnHeader={header as string}
           table={table}
+          meta={meta as MetaType}
         />
       );
     },
@@ -573,12 +671,18 @@ const ViewLayout: NextPage = () => {
         colId: string,
         value: string,
         columnHeader: string,
-        rowId: string,
+        cellId: string,
+        colType: string,
       ) => {
         setRows((old) =>
           old.map((row, index) => {
             if (index === rowIndex) {
-              updateCell({ columnId: colId, newValue: value, rowId });
+              updateCell({
+                columnId: colId,
+                newValue: value,
+                rowId: old[rowIndex]!.id!,
+                colType,
+              });
               return {
                 ...old[rowIndex]!,
                 [columnHeader]: value,
@@ -659,7 +763,7 @@ const ViewLayout: NextPage = () => {
                     setBaseModalOpen(true);
                   }}
                 >
-                  <span className="text-[17px] font-semibold">
+                  <span className="text-[17px] font-[675] text-white text-opacity-90 hover:text-opacity-95">
                     {currentBase?.name}
                   </span>
                   <div>
@@ -667,25 +771,62 @@ const ViewLayout: NextPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="ml-2 cursor-default rounded-full border-[1px] border-[#1b6074] bg-[#006a89] px-[11px] py-[4px] text-[12.5px] text-gray-200 text-opacity-95 shadow-inner hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="ml-2 cursor-default rounded-full border-[1px] border-[#1b6074] bg-[#006a89] px-[11px] py-[4px] text-[13px] text-white text-opacity-95 shadow-inner hover:bg-cyan-800 hover:bg-opacity-40">
                 Data
               </div>
-              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12.5px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[13px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
                 Automations
               </div>
-              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12.5px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[13px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
                 Interfaces
               </div>
-              <div className="h-5 border-r border-slate-300 border-opacity-30"></div>
-              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12.5px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="h-5 border-r border-slate-300 border-opacity-30 pr-1"></div>
+              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[13px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
                 Forms
               </div>
             </div>
-            <div className="flex flex-row justify-between"></div>
+            <div className="mr-4 flex flex-row items-center justify-between gap-4">
+              <div className="-mr-3 cursor-pointer rounded-full p-2 px-3 text-white text-opacity-70 hover:bg-[#00708f]">
+                <FaClockRotateLeft size={12} />
+              </div>
+              <div
+                className="-mr-2 flex cursor-pointer flex-row items-center gap-[4px] rounded-full bg-transparent px-3 py-[6px] text-white text-opacity-80 hover:bg-[#00708f]"
+                id="help-button"
+              >
+                <div id="icon-container" className="">
+                  <IoIosHelpCircleOutline size={16} />
+                </div>
+                <span className="text-[13px]">Help</span>
+              </div>
+              <div
+                className="flex cursor-pointer flex-row items-center gap-[5px] rounded-full border-[1px] border-black border-opacity-20 bg-[#005e79] px-[11px] py-[5px] text-[13px] text-white shadow-inner"
+                id="help-button"
+              >
+                Trial: 5 days left
+              </div>
+              <div className="flex cursor-pointer flex-row items-center gap-[5px] rounded-full bg-transparent bg-white px-3 py-[5px] text-[#007da1] opacity-95 hover:opacity-100">
+                <div id="icon-container" className="">
+                  <PiUsers size={16} />
+                </div>
+                <span className="font- text-[13px]">Share</span>
+              </div>
+              <div className="cursor-pointer rounded-full bg-white p-[6px] text-[#007da1] opacity-90 hover:opacity-100">
+                <div>
+                  <PiBell size={16} />
+                </div>
+              </div>
+              <Image
+                src={user?.imageUrl ?? ""}
+                alt="Profile Image"
+                className="h-7 w-7 cursor-pointer rounded-full outline outline-1 outline-white"
+                width={56}
+                height={56}
+              />
+            </div>
           </div>
 
-          <div className="absolute left-0 right-0 top-[56px] h-[32px] overflow-auto overflow-y-hidden bg-[#007091]">
-            <div className="flex h-full flex-row pl-3">
+          <div className="absolute left-0 right-0 top-[56px] flex h-[32px] w-full flex-row gap-2 overflow-auto overflow-y-hidden bg-[#007da1]">
+            <div className="flex h-full flex-grow flex-row bg-[#007091] pl-3">
               {currentTables.map((table) => (
                 <TableView
                   {...table}
@@ -725,8 +866,19 @@ const ViewLayout: NextPage = () => {
                 <div>
                   <FiPlus size={18} className="" />
                 </div>
-                <span className="-mb-[1px] text-[12.5px]">Add or import</span>
+                <span className="-mb-[1px] text-[13px]">Add or import</span>
               </button>
+            </div>
+            <div className="flex h-full w-[157.71px] flex-row items-center bg-[#007091] text-white">
+              <span className="cursor-pointer px-3 text-white text-opacity-80 hover:text-opacity-90">
+                Extensions
+              </span>
+              <span className="flex cursor-pointer flex-row items-center gap-2 px-3 text-white text-opacity-80 hover:text-opacity-90">
+                <span>Tools</span>
+                <div>
+                  <FaChevronDown size={10} />
+                </div>
+              </span>
             </div>
           </div>
         </div>
@@ -740,7 +892,7 @@ const ViewLayout: NextPage = () => {
               <div className="ml-3 flex flex-row items-center justify-between gap-2">
                 <div
                   id="view"
-                  className={`flex flex-row items-center justify-normal gap-1 rounded-[4px] ${loadingViewsState ? "bg-white" : "bg-[#f2f2f2]"} px-2 py-1 text-[12.5px] font-[500] hover:ring-2 hover:ring-inset hover:ring-gray-300`}
+                  className={`flex flex-row items-center justify-normal gap-1 rounded-[4px] ${loadingViewsState ? "bg-white" : "bg-[#f2f2f2]"} px-2 py-1 text-[13px] font-[500] hover:ring-2 hover:ring-inset hover:ring-gray-300`}
                 >
                   <RxHamburgerMenu size={15} />
                   <span>Views</span>
@@ -752,19 +904,21 @@ const ViewLayout: NextPage = () => {
                   </>
                 ) : (
                   <>
-                    <div className="h-5 w-[1px] border-r-[1px] border-black opacity-30"></div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-sm px-2 py-1 text-[12.5px] font-[500] transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
-                      <VscTable className="text-[#166EE1]" size={17} />
+                    <div className="h-4 w-[1px] border-r-[1px] border-black pr-1 opacity-30"></div>
+                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-sm px-2 py-1 text-[13px] font-[500] transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                      <div className="-mr-1 items-center pt-[1px]">
+                        <VscTable className="text-[#166EE1]" size={17} />
+                      </div>
                       <span className="ml-1">Grid view</span>
                       <PiUsersThree size={17} />
-                      <IoChevronDownSharp size={15} />
+                      <BsChevronDown size={12} />
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <BsEyeSlash size={15} />
                       <span>Hide fields</span>
                     </div>
                     <div
-                      className={`flex w-auto cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[12.5px] text-gray-800 ${filters.length > 0 ? "bg-[#caf4d3] hover:ring-2 hover:ring-inset hover:ring-[#b5dbbd]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
+                      className={`flex w-auto cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 ${filters.length > 0 ? "bg-[#caf4d3] hover:ring-2 hover:ring-inset hover:ring-[#b5dbbd]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
                       onClick={(e) => {
                         e.preventDefault();
                         const element = e.currentTarget;
@@ -780,12 +934,12 @@ const ViewLayout: NextPage = () => {
                           : "Filter"}
                       </span>
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <AiOutlineGroup size={15} />
                       <span>Group</span>
                     </div>
                     <div
-                      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[12.5px] text-gray-800 ${sorters.length > 0 ? "bg-[#ffe0cd] hover:ring-2 hover:ring-inset hover:ring-[#e5c9b8]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
+                      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 ${sorters.length > 0 ? "bg-[#ffe0cd] hover:ring-2 hover:ring-inset hover:ring-[#e5c9b8]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
                       onClick={(e) => {
                         e.preventDefault();
                         const element = e.currentTarget;
@@ -801,15 +955,15 @@ const ViewLayout: NextPage = () => {
                           : "Sort"}
                       </span>
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
-                      <PiPaintBucket size={15} />
+                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                      <PiPaintBucket size={16} />
                       <span>Color</span>
                     </div>
-                    <div className="flex cursor-pointer items-center justify-normal rounded-sm px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                    <div className="flex cursor-pointer items-center justify-normal rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <RxRows size={13} />
                     </div>
                     <div
-                      className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[12.5px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]"
+                      className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]"
                       onClick={() =>
                         console.log(
                           viewsState.find((v) => v.id === currentView),
@@ -823,7 +977,7 @@ const ViewLayout: NextPage = () => {
                 )}
               </div>
               <div
-                className="mr-3 flex cursor-pointer items-center"
+                className="mr-4 flex cursor-pointer items-center opacity-70"
                 onClick={(e) => {
                   e.preventDefault();
                   const element = e.currentTarget;
@@ -832,13 +986,13 @@ const ViewLayout: NextPage = () => {
                   setSearchPopUpState(true);
                 }}
               >
-                <HiMagnifyingGlass size={20} />
+                <HiMagnifyingGlass size={16} />
               </div>
             </div>
           </div>
         </div>
         <div className="mt-[44px]"></div>
-        <div className="relative z-10 flex h-[calc(100%-132px)] flex-row">
+        <div className="relative z-20 flex h-[calc(100%-132px)] flex-row">
           {loadingViewsState ? (
             <div className="flex h-full w-[282px] flex-col justify-between border-2 bg-white px-3 pt-2">
               <div className="mt-10 flex h-[33px] flex-row items-center rounded-md bg-[#fafafa]">
@@ -849,25 +1003,25 @@ const ViewLayout: NextPage = () => {
           ) : (
             <div className="relative flex h-full w-full flex-row">
               <div
-                className="sticky top-0 z-10 flex h-full w-[282px] flex-col justify-between border-2 bg-white px-3 pt-2"
+                className="sticky top-0 z-20 flex h-full w-[282px] flex-col justify-between border-r-[1.5px] border-black border-opacity-25 bg-white px-3 pt-2"
                 id="sidebar"
                 onClick={() => {
                   setTableModalOpen(false);
                 }}
               >
                 <div className="flex flex-col gap-0">
-                  <div className="my-2 flex flex-row border-b focus-within:border-b-blue-500">
+                  <div className="my-2 flex flex-row border-b pb-1 focus-within:border-b-blue-500">
                     <div className="flex w-full flex-row items-center justify-start gap-2 pb-1 pl-3">
-                      <div>
+                      <div className="opacity-60">
                         <HiMagnifyingGlass size={16} />
                       </div>
                       <input
                         type="text"
                         placeholder="Find a view"
-                        className="max-w-[190px] bg-transparent outline-none placeholder:text-xs"
+                        className="w-[190px] bg-transparent text-[13px] text-black opacity-90 outline-none placeholder:text-[13px]"
                       />
                     </div>
-                    <div className="flex cursor-pointer items-center pr-3">
+                    <div className="-mt-2 flex cursor-pointer items-center pr-4">
                       <GoGear className="text-gray-500" size={16} />
                     </div>
                   </div>
@@ -911,7 +1065,7 @@ const ViewLayout: NextPage = () => {
                     ))}
                   </div>
                 </div>
-                <div className="flex flex-col gap-0 px-1 py-3 pt-4">
+                <div className="flex flex-col gap-0 px-2 py-3 pt-4">
                   <div className="border-t pb-3"></div>
                   <div className="flex cursor-pointer flex-row items-center justify-between pb-3">
                     <span className="pl-3 text-[15px] font-[500]">
@@ -922,7 +1076,7 @@ const ViewLayout: NextPage = () => {
                     </div>
                   </div>
                   <div
-                    className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[7px] text-[12.5px] font-[500] hover:bg-[#f2f2f2]"
+                    className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[7px] text-[13px] font-[500] hover:bg-[#f2f2f2]"
                     onClick={(e) => {
                       e.preventDefault();
                       const uniqueCUID = cuid();
@@ -950,47 +1104,50 @@ const ViewLayout: NextPage = () => {
                     </div>
                     <span>Grid</span>
                   </div>
-                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[7px] text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
+                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[7px] text-[13px] font-[500] hover:bg-[#f2f2f2]">
                     <div>
                       <PiCalendar className="text-[#D54401]" size={17} />
                     </div>
                     <span>Calendar</span>
                   </div>
-                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[7px] text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
+                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[7px] text-[13px] font-[500] hover:bg-[#f2f2f2]">
                     <div>
-                      <RiGalleryView2 className="text-[#7C37EF]" size={17} />
+                      <RiGalleryView2
+                        className="text-[#7C37EF] opacity-80"
+                        size={17}
+                      />
                     </div>
                     <span>Gallery</span>
                   </div>
-                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[6px] text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
+                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[6px] text-[13px] font-[500] hover:bg-[#f2f2f2]">
                     <div>
                       <PiKanban className="text-[#048A0E]" size={17} />
                     </div>
                     <span>Kanban</span>
                   </div>
-                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[6px] text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
+                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[6px] text-[13px] font-[500] hover:bg-[#f2f2f2]">
                     <div>
                       <PiKanban className="text-[#DC043B]" size={17} />
                     </div>
                     <span>Timeline</span>
                   </div>
-                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[6px] text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
+                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[6px] text-[13px] font-[500] hover:bg-[#f2f2f2]">
                     <div>
                       <FaRegListAlt className="text-[#0D52AC]" size={17} />
                     </div>
                     <span>List</span>
                   </div>
-                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[6px] text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
+                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-[6px] text-[13px] font-[500] hover:bg-[#f2f2f2]">
                     <div>
                       <FaChartGantt className="text-[#0D7F78]" size={17} />
                     </div>
                     <span>Gantt</span>
                   </div>
-                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-2 text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
+                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-2 text-[13px] font-[500] hover:bg-[#f2f2f2]">
                     New section
                   </div>
                   <div className="border-b pb-3"></div>
-                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-2 text-[12.5px] font-[500] hover:bg-[#f2f2f2]">
+                  <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-[3px] px-2 py-2 text-[13px] font-[500] hover:bg-[#f2f2f2]">
                     <div>
                       <FaWpforms className="text-[#DD04A8]" size={17} />
                     </div>
@@ -1014,7 +1171,7 @@ const ViewLayout: NextPage = () => {
                 </div>
               ) : (
                 <div
-                  className="relative w-full overflow-auto"
+                  className="relative w-full overflow-auto [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-300 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white dark:[&::-webkit-scrollbar-track]:bg-white [&::-webkit-scrollbar]:w-2"
                   onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
                   ref={tableContainerRef}
                 >
@@ -1054,14 +1211,27 @@ const ViewLayout: NextPage = () => {
                                     )}
                                   </Box>
                                 )}
-                                <Box className="text-[12.5px] opacity-80">
+                                <Box className="text-[13px] opacity-80">
                                   {flexRender(
                                     header.column.columnDef.header,
                                     header.getContext(),
                                   )}
                                 </Box>
                               </Box>
-                              <Box className="flex cursor-pointer items-center rounded-full px-2 opacity-50">
+                              <Box
+                                className="flex cursor-pointer items-center rounded-full px-2 opacity-50"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const element = e.currentTarget;
+                                  const rect = element.getBoundingClientRect();
+                                  setMousePosition({
+                                    x: rect.left - 100,
+                                    y: rect.bottom + 7,
+                                  });
+                                  setColumnOptionPopUp(true);
+                                  setPopUpId(header.column.columnDef.id!);
+                                }}
+                              >
                                 <FaChevronDown size={12} />
                               </Box>
                             </Box>
@@ -1108,8 +1278,11 @@ const ViewLayout: NextPage = () => {
                             rowVirtualizer.measureElement(node)
                           }
                           key={row?.id}
-                          onClick={() => {
-                            closePopup();
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            setMousePosition({ x: e.clientX, y: e.clientY });
+                            setPopUpId(row!.id);
+                            openPopup();
                           }}
                           style={{
                             transform: `translateY(${virtualRow.start}px)`,
@@ -1171,9 +1344,37 @@ const ViewLayout: NextPage = () => {
                     </div>
                   </div>
                   <div
-                    className="flex h-[32px] w-[149px] cursor-pointer items-center rounded-md bg-white text-red-500 hover:text-red-400"
+                    className="flex h-[32px] w-[149px] text-[14px] p-2 cursor-pointer items-center rounded-md bg-white text-red-500 hover:text-red-400"
                     onClick={() => {
-                      add5k({ tableId });
+                      const seed =
+                        Math.floor(Math.random() * (300 - 1 + 1)) + 1;
+                      faker.seed(seed);
+                      const fakers = [
+                        () => faker.person.fullName(),
+                        () => faker.animal.petName(),
+                        () => faker.food.dish(),
+                      ];
+                      const cuids = Array.from({ length: 15000 }, () => cuid());
+                      const rows15k = cuids.map((rowId) => ({
+                        id: rowId,
+                        ...columns.reduce(
+                          (acc, col, index) => {
+                            acc[col.header as string] =
+                              (col.meta as MetaType).type === "text"
+                                ? fakers[index % 3]!()
+                                : faker.number.int({ min: 1, max: 300 });
+                            return acc;
+                          },
+                          {} as Record<string, string | number>,
+                        ), // Initialize an empty object to accumulate the key-value pairs
+                      }));
+
+                      // Assuming you're updating state with the new rows
+                      setRows((prev) => [
+                        ...prev,
+                        ...rows15k, // You can directly spread rows15k, no need for type casting
+                      ]);
+                      add5k({ tableId, idS: cuids, seed: 354 });
                     }}
                   >
                     ADD 15K RECORDS
@@ -1184,6 +1385,7 @@ const ViewLayout: NextPage = () => {
                     x={mousePosition.x + 10}
                     y={mousePosition.y + 10}
                     record={popUpId}
+                    closePopUp={closePopup}
                   />
                 </div>
               )}
@@ -1200,6 +1402,21 @@ const ViewLayout: NextPage = () => {
             setCurrentTableId={setTableId}
             setTableState={setTables}
             setModalOpen={setTableModalOpen}
+          />
+          <ColumnOptionsPopUp
+            isOpen={columnOptionPopUp}
+            sorters={sorters}
+            x={mousePosition.x}
+            y={mousePosition.y}
+            filters={filters}
+            currentColId={popUpId}
+            currentViewId={currentView!}
+            baseId={baseId}
+            setViewState={setViewState}
+            setColumnState={setColumns}
+            columnsState={columns}
+            setRowState={setRows}
+            setModalOpen={setColumnOptionPopUp}
           />
           <BasePopUp
             isOpen={baseModalOpen}

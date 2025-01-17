@@ -2,7 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import cuid from "cuid";
 import OutsideClick from "outsideclick-react";
 import { useEffect, useState } from "react";
-import { PiPlus } from "react-icons/pi";
+import { PiPlus, PiTrash } from "react-icons/pi";
 import { useDebounce } from "use-debounce";
 import { FaChevronDown, FaRegTrashCan } from "react-icons/fa6";
 import type { Column, View } from "@prisma/client";
@@ -79,7 +79,7 @@ const FilterModifierPopUp: React.FC<{
     >
       {modifiers.map((key) => (
         <div
-          className="text-custom cursor-pointer px-2 py-1 text-[12.5px] hover:bg-[#f2f2f2]"
+          className="text-custom cursor-pointer px-2 py-1 text-[13px] hover:bg-[#f2f2f2]"
           key={key}
           onClick={() => {
             setFilterModifierModalOpen(false);
@@ -127,7 +127,7 @@ const FilterTypePopUp: React.FC<{
         <>
           {Object.entries(filterTypesString).map(([filterKey, filter]) => (
             <div
-              className="cursor-pointer px-2 py-1 text-[12.5px] hover:bg-[#f2f2f2]"
+              className="cursor-pointer px-2 py-1 text-[13px] hover:bg-[#f2f2f2]"
               key={filterKey}
               onClick={() => {
                 const { key, isNegative } = filter;
@@ -319,11 +319,11 @@ export const FilterPopUp: React.FC<{
       >
         <div className="m-3 flex flex-col gap-4 text-[13px]">
           {filters.length > 0 ? (
-            <span className="text-[12.5px] text-gray-500">
+            <span className="text-[13px] text-gray-500">
               In this view, show records
             </span>
           ) : (
-            <span className="text-[12.5px] text-gray-500">
+            <span className="text-[13px] text-gray-500">
               No filter conditions applied
             </span>
           )}
@@ -331,7 +331,7 @@ export const FilterPopUp: React.FC<{
             {filters.map((filterObj) => (
               <>
                 <div
-                  className="flex w-[558px] flex-row items-center gap-0 pl-2 text-[12.5px] opacity-70"
+                  className="flex w-[558px] flex-row items-center gap-0 pl-2 text-[13px] opacity-70"
                   key={filterObj.id}
                 >
                   {filterObj.type !== "neutral" ? (
@@ -388,7 +388,7 @@ export const FilterPopUp: React.FC<{
                     </div>
                   </div>
                   <input
-                    type="text"
+                    type={filterObj.columnType}
                     placeholder={
                       inputDisabled(filterObj.filterKey) ? "" : "type something"
                     }
@@ -424,7 +424,7 @@ export const FilterPopUp: React.FC<{
                       });
                     }}
                   >
-                    <FaRegTrashCan size={15} />
+                    <PiTrash size={15} />
                   </div>
                 </div>
               </>
@@ -459,13 +459,13 @@ export const FilterPopUp: React.FC<{
               <div id="icon-container">
                 <PiPlus size={12} />
               </div>
-              <span className="text-[12.5px]">Add condition</span>
+              <span className="text-[13px]">Add condition</span>
             </div>
             <div className="flex cursor-pointer flex-row items-center gap-1 hover:text-blue-500">
               <div id="icon-container">
                 <PiPlus size={12} />
               </div>
-              <span className="text-[12.5px]">Add condition group</span>
+              <span className="text-[13px]">Add condition group</span>
             </div>
           </div>
         </div>

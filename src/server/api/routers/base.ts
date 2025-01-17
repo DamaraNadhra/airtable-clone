@@ -1,4 +1,5 @@
 import cuid from "cuid";
+import { Input } from "postcss";
 import { z } from "zod";
 
 import {
@@ -186,10 +187,18 @@ export const baseRouter = createTRPCRouter({
       }
       return base;
     }),
-  getAll: publicProcedure.query(async ({ ctx }) => {
-    const bases = await ctx.db.base.findMany();
-    return bases;
-  }),
+  getAll: publicProcedure
+    .input(
+      z.object({
+        authorId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const bases = await ctx.db.base.findMany({
+        where: { authorId: input.authorId },
+      });
+      return bases;
+    }),
   rename: privateProcedure
     .input(
       z.object({

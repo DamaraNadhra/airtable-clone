@@ -31,7 +31,8 @@ export const cellsRouter = createTRPCRouter({
       z.object({
         rowId: z.string(),
         columnId: z.string(),
-        newValue: z.union([z.string(), z.number()]),
+        newValue: z.string(),
+        colType: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -44,7 +45,7 @@ export const cellsRouter = createTRPCRouter({
         },
       });
       const newData =
-        typeof input.newValue === "string"
+        input.colType === "text"
           ? { stringValue: input.newValue }
           : { intValue: Number(input.newValue) };
       const updatedCells = await ctx.db.cell.update({

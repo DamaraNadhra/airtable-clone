@@ -48,13 +48,13 @@ export const TableView = ({
   return (
     <div className="h-full">
       {isActive(id) ? (
-        <div className="flex h-full flex-row items-center gap-2 rounded-tl-[3px] rounded-tr-[3px] bg-white px-3 pt-1 shadow-md">
-          <div
-            className="flex cursor-pointer flex-row gap-2"
-            onClick={handlePopUp}
-            onContextMenu={handlePopUp}
-          >
-            <span className="scale-y-105 text-[12px] font-[500]">{name}</span>
+        <div
+          className="flex h-full flex-row items-center gap-2 rounded-tl-[3px] rounded-tr-[3px] bg-white px-3 pt-1 shadow-md cursor-pointer"
+          onClick={handlePopUp}
+          onContextMenu={handlePopUp}
+        >
+          <div className="flex flex-row gap-2">
+            <span className="font-[500]">{name}</span>
             <div>
               <IoChevronDownSharp size={13} />
             </div>
@@ -63,7 +63,7 @@ export const TableView = ({
       ) : (
         <div className="flex flex-row">
           <Link
-            className="flex scale-y-105 rounded-[3px] px-3 py-2 text-[12px] font-[400] text-slate-300 hover:bg-slate-800 hover:bg-opacity-10 hover:text-slate-200"
+            className="flex rounded-[3px] px-3 py-2 font-[400] text-slate-300 hover:bg-slate-800 hover:bg-opacity-10 hover:text-slate-200"
             href={{
               pathname: `/${baseId}/${id}`,
               query: {

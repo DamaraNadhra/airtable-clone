@@ -8,8 +8,13 @@ import type { MetaType, SortObject, ViewObj } from "~/helpers/types";
 import { api } from "~/utils/api";
 import { RxCross1 } from "react-icons/rx";
 import { FaChevronDown } from "react-icons/fa6";
-import { getIconComponent } from "~/helpers/getIconComponent";
+import {
+  getIconComponent,
+  NumberOrder,
+  StringOrder,
+} from "~/helpers/getIconComponent";
 import toast from "react-hot-toast";
+import { MdArrowRightAlt } from "react-icons/md";
 
 const NewSorterPopUp: React.FC<{
   x: number;
@@ -50,7 +55,7 @@ const NewSorterPopUp: React.FC<{
             <div id="icon-container" className="text-gray-600 opacity-90">
               {getIconComponent((col.meta as MetaType).icon, 16)}
             </div>
-            <span className="text-[12.5px]">{col.header as string}</span>
+            <span className="text-[13px]">{col.header as string}</span>
           </div>
         ))}
       </div>
@@ -113,6 +118,7 @@ const FieldTypePopUp: React.FC<{
     </div>
   );
 };
+
 const OrderTypePopUp: React.FC<{
   x: number;
   y: number;
@@ -147,7 +153,11 @@ const OrderTypePopUp: React.FC<{
             });
           }}
         >
-          {ord == "asc" ? "A-Z" : "Z-A"}
+          {currentSortObj.type === "text" ? (
+            <StringOrder order={ord} />
+          ) : (
+            <NumberOrder order={ord} />
+          )}
         </div>
       ))}
     </div>
@@ -248,7 +258,11 @@ export const SortPopUp: React.FC<{
                     setOrderTypePopUpState(true);
                   }}
                 >
-                  {sortObj.order === "asc" ? "A-Z" : "Z-A"}
+                  {sortObj.type === "text" ? (
+                    <StringOrder order={sortObj.order} />
+                  ) : (
+                    <NumberOrder order={sortObj.order} />
+                  )}
                   <div className="pr-3">
                     <FaChevronDown size={12} />
                   </div>
@@ -350,7 +364,7 @@ export const SortPopUp: React.FC<{
               <div id="icon-container" className="text-gray-600 opacity-90">
                 {getIconComponent((col.meta as MetaType).icon, 16)}
               </div>
-              <span className="text-[12.5px]">{col.header as string}</span>
+              <span className="text-[13px]">{col.header as string}</span>
             </div>
           ))}
         </div>

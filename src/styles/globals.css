@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+@layer utilities {
+  .no-stepper::-webkit-inner-spin-button,
+  .no-stepper::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .no-stepper {
+    -moz-appearance: textfield; /* For Firefox */
+  }
+}

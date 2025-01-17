@@ -12,6 +12,9 @@ export const columnRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const columns = await ctx.db.column.findMany({
         where: { tableId: input.tableId },
+        orderBy: {
+          createdAt: "asc",
+        },
       });
       return columns;
     }),
@@ -54,5 +57,35 @@ export const columnRouter = createTRPCRouter({
         data: cellData,
       });
       return response;
+    }),
+  delete: privateProcedure
+    .input(
+      z.object({
+        columnId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.column.delete({ where: { id: input.columnId } });
+
+      await ctx.db.cell.deleteMany({
+        where: {
+          columnId: input.columnId,
+        },
+      });
+    }),
+  update: privateProcedure
+    .input(
+      z.object({
+        columnId: z.string(),
+        newName: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updatedCol = await ctx.db.column.update({
+        where: { id: input.columnId },
+        data: {
+          name: input.newName,
+        },
+      });
     }),
 });

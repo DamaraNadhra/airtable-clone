@@ -46,7 +46,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
           </div>
         </SignedOut>
         <SignedIn>
-          <div className={GeistSans.className}>
+          <div style={{ fontFamily: `"Segoe UI", Tahoma, Geneva, Verdana, sans-serif`, fontSize: 13 }}>
             <Toaster position="bottom-center" />
             <Component {...pageProps} />
           </div>

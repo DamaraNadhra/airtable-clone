@@ -180,7 +180,7 @@ export const ColumnPopUp: React.FC<{
                 name: colName,
                 tableId,
                 id: uniqueCUID,
-                iconName: "AiOutlineNumber",
+                iconName: fieldType.icon,
                 type: fieldType.key,
               });
               setColName("");

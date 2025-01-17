@@ -52,6 +52,8 @@ export const rowRouter = createTRPCRouter({
     .input(
       z.object({
         tableId: z.string(),
+        idS: z.array(z.string()),
+        seed: z.number(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -61,6 +63,7 @@ export const rowRouter = createTRPCRouter({
       const columns = await ctx.db.column.findMany({
         where: { tableId: input.tableId },
       });
+      faker.seed(input.seed);
       const fakers = [
         () => faker.person.fullName(),
         () => faker.animal.petName(),
@@ -70,18 +73,19 @@ export const rowRouter = createTRPCRouter({
       const rowRecords = Array.from({ length: 15000 }).map((_, index) => ({
         tableId: input.tableId,
         rowOrder: maxRow + index + 1,
+        id: input.idS[index],
       }));
       const rows = await ctx.db.row.createManyAndReturn({
         data: rowRecords,
       });
 
       const records = rows.flatMap((row, index) => {
-        return columns.map((col) => ({
+        return columns.map((col, colIndex) => ({
           columnId: col.id,
           tableId: input.tableId,
           rowId: row.id,
           ...(col.type === "text"
-            ? { stringValue: fakers[index % 3]!() }
+            ? { stringValue: fakers[colIndex % 3]!() }
             : { intValue: faker.number.int({ min: 1, max: 100 }) }),
         }));
       });

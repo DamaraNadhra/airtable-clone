@@ -18,7 +18,12 @@ import { FaChevronDown } from "react-icons/fa6";
 import { FaRegStar } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa6";
 import { FaChevronRight } from "react-icons/fa";
-import { PiStarFour } from "react-icons/pi";
+import {
+  PiBell,
+  PiNotification,
+  PiStarFour,
+  PiUsersThree,
+} from "react-icons/pi";
 import { PiGridFourLight } from "react-icons/pi";
 import { GoArrowUp } from "react-icons/go";
 import { PiTableLight } from "react-icons/pi";
@@ -54,7 +59,7 @@ const BaseView = (props: BaseKind) => {
   const router = useRouter();
   return (
     <div
-      className="flex h-[95px] w-[336px] cursor-pointer flex-col gap-2 rounded-lg border-2 bg-white hover:shadow-md"
+      className="flex h-[95px] w-auto max-w-[336px] flex-shrink cursor-pointer flex-col gap-2 rounded-lg border-2 bg-white hover:shadow-md"
       key={props.id}
       onClick={() => {
         router.push(`/${props.id}`);
@@ -77,22 +82,28 @@ const BaseView = (props: BaseKind) => {
 
 export default function Home() {
   const router = useRouter();
+  const { user } = useUser();
+  if (!user) throw new Error("UNAUTHORIZED");
   const { mutate: createBase } = api.base.create.useMutation();
-  const { data: baseData, isLoading: baseLoading } = api.base.getAll.useQuery();
-  const user = useUser();
+  const { data: baseData, isLoading: baseLoading } = api.base.getAll.useQuery({
+    authorId: user.id,
+  });
 
   return (
     <>
       <main className="relative flex h-screen w-screen flex-col overflow-x-hidden">
-        <div className="fixed left-0 right-0 top-0 flex h-[60px] flex-row items-center justify-between border-b py-2 shadow-sm">
-          <div className="ml-4 flex flex-row items-center gap-4">
-            <div id="hamburg-menu-container" className="">
+        <div className="fixed left-0 right-0 top-0 flex h-[56px] flex-row items-center justify-between border-b py-2 shadow-sm">
+          <div className="ml-3 flex flex-row items-center gap-4">
+            <div
+              id="hamburg-menu-container"
+              className="cursor-pointer opacity-80 hover:opacity-95"
+            >
               <LuMenu size={20} />
             </div>
             <Image
               src={airtableLogo}
               alt="airtable logo"
-              className="h-7 w-28"
+              className="h-[28px] w-[108px]"
             />
           </div>
           <div className="flex flex-row items-center gap-2 rounded-full border-2 py-1 pl-3 pr-16 hover:cursor-pointer hover:shadow-md">
@@ -104,27 +115,27 @@ export default function Home() {
               placeholder="Search..."
             />
           </div>
-          <div className="mr-5 flex flex-row gap-3">
+          <div className="mr-5 flex flex-row gap-4">
             <div
-              className="flex cursor-pointer flex-row items-center gap-1 rounded-full bg-white px-2 hover:bg-gray-300 hover:bg-opacity-80"
+              className="flex cursor-pointer flex-row items-center gap-1 rounded-full bg-white px-2 text-black text-opacity-75 hover:bg-[#f2f2f2] hover:bg-opacity-80"
               id="help-button"
             >
               <div id="icon-container" className="">
-                <IoIosHelpCircleOutline size={20} />
+                <IoIosHelpCircleOutline size={18} />
               </div>
-              <span className="text-sm">Help</span>
+              <span className="text-[13px]">Help</span>
             </div>
             <div
               id="notif-container"
-              className="flex cursor-pointer items-center rounded-full border-2 px-1 py-1 shadow-sm hover:bg-gray-300 hover:bg-opacity-80"
+              className="flex cursor-pointer items-center rounded-full border-[1px] px-1 py-1 shadow-sm hover:bg-gray-300 hover:bg-opacity-80"
             >
-              <IoIosNotificationsOutline size={20} />
+              <PiBell size={16} />
             </div>
             <SignOutButton>
               <Image
-                src={user.user?.imageUrl ?? ""}
+                src={user?.imageUrl ?? ""}
                 alt="Profile Image"
-                className="h-7 w-7 rounded-full"
+                className="h-7 w-7 cursor-pointer rounded-full"
                 width={56}
                 height={56}
               />
@@ -136,16 +147,16 @@ export default function Home() {
           <div className="relative">
             <div
               id="sidebar"
-              className="group absolute left-0 top-0 z-10 h-full w-[47px] flex-grow origin-left transform overflow-hidden border-r bg-white transition-transform duration-300 hover:w-[300px]"
+              className="group absolute left-0 top-0 z-10 h-full min-w-[47px] flex-grow origin-left transform overflow-hidden border-r bg-white transition-all duration-100 ease-in-out hover:min-w-[300px]"
             >
               <div className="flex h-full flex-col justify-between group-hover:hidden">
                 <div
                   id="top-side-sidebar"
-                  className="collapsed-content mt-4 flex flex-col gap-4 px-3"
+                  className="collapsed-content mt-4 flex flex-col gap-5 px-3"
                 >
-                  <GoHome size={20} />
-                  <IoPeopleOutline size={20} />
-                  <div className="mt-1 border-b"></div>
+                  <GoHome size={20} className="opacity-80" />
+                  <PiUsersThree size={20} className="opacity-80" />
+                  <div className="border-b"></div>
                 </div>
                 <div
                   id="bottom-side-sidebar"
@@ -178,7 +189,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <div className="hidden group-hover:flex group-hover:h-full group-hover:flex-col group-hover:justify-between group-hover:shadow-md">
+              <div className="fixed left-0 top-0 hidden transform transition-transform duration-300 group-hover:flex group-hover:h-full group-hover:min-w-[300px] group-hover:translate-x-0 group-hover:flex-col group-hover:justify-between group-hover:shadow-md">
                 <div className="flex flex-col items-center gap-3">
                   <div className="mt-2 flex w-[92%] cursor-pointer flex-row items-center justify-between rounded-sm hover:bg-slate-300 hover:bg-opacity-40">
                     <span className="px-2 py-2 pl-2 pr-10 font-[500]">
@@ -248,7 +259,7 @@ export default function Home() {
           </div>
           <div className="w-[47px]"></div>
           <div className="flex w-full flex-col gap-7 bg-[#f8fafb] px-11">
-            <span className="pt-7 text-[27px] font-semibold">Home</span>
+            <span className="pt-7 text-[27px] font-[675]">Home</span>
             <div className="grid justify-start gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
               <BaseLayout>
                 <div className="flex flex-row items-center gap-2 px-3 pt-3">
@@ -307,7 +318,7 @@ export default function Home() {
               <span className="hover:cursor-pointer">Opened by you ⌵</span>
               <span className="hover:cursor-pointer">Show all types ⌵</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {baseData?.map((base) => <BaseView {...base} />)}
             </div>
           </div>
