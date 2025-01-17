@@ -1354,7 +1354,7 @@ const ViewLayout: NextPage = () => {
                         () => faker.animal.petName(),
                         () => faker.food.dish(),
                       ];
-                      const cuids = Array.from({ length: 15000 }, () => cuid());
+                      const cuids = Array.from({ length: 5000 }, () => cuid());
                       const rows15k = cuids.map((rowId) => ({
                         id: rowId,
                         ...columns.reduce(
@@ -1377,7 +1377,7 @@ const ViewLayout: NextPage = () => {
                       add5k({ tableId, idS: cuids, seed: 354 });
                     }}
                   >
-                    ADD 15K RECORDS
+                    ADD 5K RECORDS
                   </div>
                   <PopUp
                     isOpen={isOpen}

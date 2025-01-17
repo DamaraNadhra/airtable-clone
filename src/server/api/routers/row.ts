@@ -70,7 +70,7 @@ export const rowRouter = createTRPCRouter({
         () => faker.food.dish(),
       ];
 
-      const rowRecords = Array.from({ length: 15000 }).map((_, index) => ({
+      const rowRecords = Array.from({ length: 5000 }).map((_, index) => ({
         tableId: input.tableId,
         rowOrder: maxRow + index + 1,
         id: input.idS[index],
