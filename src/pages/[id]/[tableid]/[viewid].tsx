@@ -554,29 +554,21 @@ const ViewLayout: NextPage = () => {
     updateCellData: (
       rowIndex: number,
       colId: string,
-      columnHeader: string,
       value: string,
-      cellId: string,
       colType: string,
+      columnHeader: string,
+      rowId: string,
     ) => void;
   };
   const EditableCell: React.FC<{
     getValue: () => unknown;
     rowIndex: number;
-    cellId: string;
     columnId: string;
     table: TanstackTable<Record<string, string>>;
     columnHeader: string;
     meta: MetaType;
-  }> = ({
-    getValue,
-    rowIndex,
-    meta,
-    cellId,
-    columnId,
-    table,
-    columnHeader,
-  }) => {
+    rowId: string;
+  }> = ({ getValue, rowIndex, meta, rowId, columnId, table, columnHeader }) => {
     const initialValue = getValue() as string;
     const [value, setValue] = React.useState<string>(initialValue);
     const colType = meta.type;
@@ -588,7 +580,7 @@ const ViewLayout: NextPage = () => {
         value,
         colType,
         columnHeader,
-        cellId,
+        rowId,
       );
     };
 
@@ -620,7 +612,7 @@ const ViewLayout: NextPage = () => {
     }) => {
       return (
         <EditableCell
-          cellId={row.id}
+          rowId={row.id}
           getValue={getValue}
           rowIndex={row.index}
           columnId={id}
@@ -670,17 +662,18 @@ const ViewLayout: NextPage = () => {
         rowIndex: number,
         colId: string,
         value: string,
-        columnHeader: string,
-        cellId: string,
         colType: string,
+        columnHeader: string,
+        rowId: string,
       ) => {
         setRows((old) =>
           old.map((row, index) => {
+            console.log(rowId);
             if (index === rowIndex) {
               updateCell({
                 columnId: colId,
                 newValue: value,
-                rowId: old[rowIndex]!.id!,
+                rowId: rowId,
                 colType,
               });
               return {
