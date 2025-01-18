@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: -apple-system, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
 }
 @layer utilities {
   .no-stepper::-webkit-inner-spin-button,
