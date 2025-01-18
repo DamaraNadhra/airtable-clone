@@ -47,6 +47,7 @@ model Column {
   createdAt DateTime @default(now())
   table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade) // Relation to the Table model
   type      String   
+  hidden    Boolean  @default(false)
   cells     Cell[]   // Relation to the Cell model
   icon      String
   priority  String
@@ -74,6 +75,7 @@ model View {
   name      String   // Name of the view
   filterState Json[]
   sorterState Json[]
+  hiddenFields Json[] @default([])
   tableId    String   // Foreign key to the base
   createdAt DateTime @default(now())
   searchTerm  String

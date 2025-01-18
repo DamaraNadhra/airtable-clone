@@ -1,14 +1,10 @@
 import {
   createColumnHelper,
-  type CellContext,
   type ColumnDef,
-  type CoreInstance,
 } from "@tanstack/react-table";
 import cuid from "cuid";
 import OutsideClick from "outsideclick-react";
 import { useState } from "react";
-import toast from "react-hot-toast";
-import type { IconType } from "react-icons/lib";
 import { AiOutlineNumber } from "react-icons/ai";
 import { LuLetterText } from "react-icons/lu";
 import { api } from "~/utils/api";

@@ -143,7 +143,8 @@ export const rowRouter = createTRPCRouter({
               name: col.name,
             },
             [cellValue]: {
-              equals: input.searchTerm,
+              contains: input.searchTerm,
+              mode: "insensitive"
             },
           };
         }

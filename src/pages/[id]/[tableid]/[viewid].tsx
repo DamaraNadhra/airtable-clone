@@ -77,6 +77,7 @@ import { ColumnOptionsPopUp } from "~/components/ColumnOptionsPopUp";
 import { faker } from "@faker-js/faker";
 import OutsideClick from "outsideclick-react";
 import { LuLink } from "react-icons/lu";
+import { HideFieldsPopUp } from "~/components/HideFieldsPopUp";
 
 const columnHelper = createColumnHelper<Record<string, string>>();
 
@@ -297,6 +298,7 @@ const ViewLayout: NextPage = () => {
   const [viewsState, setViewState] = useState<ViewObj[]>([]);
   const [searchState, setSearchState] = useState<string>("");
   const [sortPopUpState, setSortPopUpState] = useState<boolean>(false);
+  const [hiddenFieldState, setHiddenFields] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterObj[]>([]);
   useEffect(() => {
     if (viewId) {
@@ -342,9 +344,11 @@ const ViewLayout: NextPage = () => {
     if (viewsState.length > 0) {
       const currentViewObj = viewsState.find((v) => v.id === currentView);
       if (currentViewObj) {
+        console.log(currentViewObj.hiddenFields);
         setFilters(currentViewObj.filterState as FilterObj[]);
         setSorters(currentViewObj.sorterState as SortObject[]);
         setSearchState(currentViewObj.searchTerm);
+        setHiddenFields(currentViewObj.hiddenFields as string[]);
       }
     }
   }, [viewsState, currentView]);
@@ -379,6 +383,8 @@ const ViewLayout: NextPage = () => {
     updateView({ id: currentView!, searchTerm: debouncedSearchTerm });
     console.log("updating debounced search term");
   }, [debouncedSearchTerm, updateView]);
+  const [hideFieldsPopUpState, setHideFieldsPopUpState] =
+    useState<boolean>(false);
   const {
     data: rowsData,
     fetchNextPage,
@@ -627,23 +633,26 @@ const ViewLayout: NextPage = () => {
     isUtilityColumn: boolean;
   };
   useEffect(() => {
+    console.log(hiddenFieldState);
     if (!loadingColumnData && columnData) {
-      const updatedColumns = columnData.map((column) => {
-        return columnHelper.accessor(column.name, {
-          header: column.name,
-          id: column.id,
-          size: 180,
-          meta: {
-            icon: column.icon,
-            type: column.type,
-            priority: column.priority,
-            tableId: column.tableId,
-          },
+      const updatedColumns = columnData
+        .filter((col) => !hiddenFieldState.includes(col.id))
+        .map((column) => {
+          return columnHelper.accessor(column.name, {
+            header: column.name,
+            id: column.id,
+            size: 180,
+            meta: {
+              icon: column.icon,
+              type: column.type,
+              priority: column.priority,
+              tableId: column.tableId,
+            },
+          });
         });
-      });
       setColumns(updatedColumns);
     }
-  }, [loadingColumnData, columnData]);
+  }, [loadingColumnData, columnData, hiddenFieldState]);
 
   const table = useReactTable({
     data: rowsTemp,
@@ -906,9 +915,22 @@ const ViewLayout: NextPage = () => {
                       <PiUsersThree size={17} />
                       <BsChevronDown size={12} />
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                    <div
+                      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] ${hiddenFieldState.length > 0 ? "bg-[#beecfe] hover:ring-2 hover:ring-inset hover:ring-[#abd4e4]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const element = e.currentTarget;
+                        const rect = element.getBoundingClientRect();
+                        setMousePosition({ x: rect.left, y: rect.bottom + 5 });
+                        setHideFieldsPopUpState(true);
+                      }}
+                    >
                       <BsEyeSlash size={15} />
-                      <span>Hide fields</span>
+                      <span>
+                        {hiddenFieldState.length > 0
+                          ? `${hiddenFieldState.length} hidden ${hiddenFieldState.length > 1 ? "fields" : "field"}`
+                          : "Hide fields"}
+                      </span>
                     </div>
                     <div
                       className={`flex w-auto cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 ${filters.length > 0 ? "bg-[#caf4d3] hover:ring-2 hover:ring-inset hover:ring-[#b5dbbd]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
@@ -1077,6 +1099,7 @@ const ViewLayout: NextPage = () => {
                         searchTerm: "",
                         id: uniqueCUID,
                         name: "Grid View",
+                        hiddenFields: [],
                         tableId: tableId,
                         filterState: [],
                         sorterState: [],
@@ -1396,6 +1419,16 @@ const ViewLayout: NextPage = () => {
             setTableState={setTables}
             setModalOpen={setTableModalOpen}
           />
+          <HideFieldsPopUp
+            isOpen={hideFieldsPopUpState}
+            columns={columnData!}
+            viewState={viewsState}
+            x={mousePosition.x}
+            y={mousePosition.y}
+            currentView={currentView!}
+            setModalOpen={setHideFieldsPopUpState}
+            setViewState={setViewState}
+          />
           <ColumnOptionsPopUp
             isOpen={columnOptionPopUp}
             sorters={sorters}
@@ -1455,11 +1488,9 @@ const ViewLayout: NextPage = () => {
           <SearchPopUp
             searchState={searchState}
             setSearchState={setSearchState}
-            rows={rowsTemp}
             isOpen={searchPopUpState}
             x={mousePosition.x}
             y={mousePosition.y}
-            tableId={tableId}
             setSearchPopUpState={setSearchPopUpState}
           />
           <ViewPopUp

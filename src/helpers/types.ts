@@ -39,4 +39,5 @@ export type ViewObj = View & {
   isRenaming?: boolean;
   createdAt?: Date;
   searchTerm?: string;
+  hiddenFields?: string[] | Prisma.JsonValue[];
 };

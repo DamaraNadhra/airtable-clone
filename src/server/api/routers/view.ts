@@ -54,6 +54,7 @@ export const viewsRouter = createTRPCRouter({
         sorters: z.array(z.any()).optional(),
         newName: z.string().optional(),
         searchTerm: z.string().optional(),
+        hiddenFields: z.array(z.string()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -64,6 +65,7 @@ export const viewsRouter = createTRPCRouter({
           sorterState: input.sorters,
           name: input.newName,
           searchTerm: input.searchTerm,
+          hiddenFields: input.hiddenFields,
         },
       });
       return updatedView;

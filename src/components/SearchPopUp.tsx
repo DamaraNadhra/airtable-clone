@@ -1,28 +1,19 @@
-import { ColumnDef } from "@tanstack/react-table";
-import cuid from "cuid";
 import OutsideClick from "outsideclick-react";
-import { useState } from "react";
-import { PiPlus } from "react-icons/pi";
-import { useDebounce, useDebouncedCallback } from "use-debounce";
 
 export const SearchPopUp: React.FC<{
   x: number;
   y: number;
   isOpen: boolean;
-  tableId: string;
   setSearchPopUpState: React.Dispatch<React.SetStateAction<boolean>>;
   setSearchState: React.Dispatch<React.SetStateAction<string>>;
   searchState: string;
-  rows: Record<string, string>[];
 }> = ({
   x,
   y,
-  tableId,
   isOpen,
   setSearchPopUpState,
   searchState,
   setSearchState,
-  rows,
 }) => {
   if (!isOpen) return null;
   return (

@@ -4,10 +4,9 @@ import OutsideClick from "outsideclick-react";
 import { useEffect, useState } from "react";
 import { PiPlus, PiTrash } from "react-icons/pi";
 import { useDebounce } from "use-debounce";
-import { FaChevronDown, FaRegTrashCan } from "react-icons/fa6";
-import type { Column, View } from "@prisma/client";
+import { FaChevronDown } from "react-icons/fa6";
 import { api } from "~/utils/api";
-import { MetaType, ViewObj } from "~/helpers/types";
+import type { MetaType, ViewObj } from "~/helpers/types";
 import { getIconComponent } from "~/helpers/getIconComponent";
 type FilterType = {
   key: string;

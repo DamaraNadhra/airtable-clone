@@ -128,7 +128,6 @@ const OrderTypePopUp: React.FC<{
   currentSortObj: SortObject;
 }> = ({ x, y, isOpen, setSortState, setOrderPopUp, currentSortObj }) => {
   const order = ["asc", "desc"];
-  const [fieldTypeModalOpen, setFieldTypeModalOpen] = useState<boolean>(false);
   if (!isOpen) return null;
   return (
     <div

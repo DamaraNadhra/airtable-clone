@@ -87,7 +87,7 @@ export const BasePopUp: React.FC<{
           <input
             type="text"
             placeholder="type something"
-            className="m-3 mt-4 h-[37px] w-[272px] rounded-sm px-4 py-1 text-xl outline-none focus:bg-[#f2f2f2] focus:ring-[2px] focus:ring-blue-300"
+            className="m-3 mt-4 h-[37px] w-[272px] rounded-sm px-4 py-1 text-xl outline-none hover:bg-[#e4e9f0] focus:bg-[#e4e9f0] focus:ring-[2px] focus:ring-blue-300"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
           />
@@ -110,6 +110,7 @@ export const BasePopUp: React.FC<{
           </div>
         </div>
         <div className="mx-3 -mt-1 mb-4 border-t"></div>
+        <OutsideClick onOutsideClick={() => setRenameModalOpen(false)}>
         <AnotherPopUp
           isOpen={renameModalOpen}
           x={mousePosition.x}
@@ -117,6 +118,7 @@ export const BasePopUp: React.FC<{
           baseId={baseId}
           setModalOpen={setRenameModalOpen}
         />
+        </OutsideClick>
       </div>
     </OutsideClick>
   );

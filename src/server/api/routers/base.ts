@@ -41,6 +41,7 @@ export const baseRouter = createTRPCRouter({
                       type: "text",
                       priority: "primary",
                       icon: "MdOutlineTextFormat",
+                      hidden: false,
                     },
                     {
                       name: "Notes",
@@ -48,6 +49,7 @@ export const baseRouter = createTRPCRouter({
                       type: "text",
                       priority: "secondary",
                       icon: "LuLetterText",
+                      hidden: false,
                     },
                     {
                       name: "Assignee",
