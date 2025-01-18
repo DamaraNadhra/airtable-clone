@@ -147,7 +147,7 @@ export const TablePopUp: React.FC<{
                 setModalOpen(false);
                 setTableState((prev) =>
                   prev.map((table) =>
-                    table.id === tableid ? { ...table, name: newName } : table,
+                    table.id === tableId ? { ...table, name: newName } : table,
                   ),
                 );
                 setRenameModal(false);
