@@ -1,7 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import cuid from "cuid";
 import OutsideClick from "outsideclick-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PiPlus } from "react-icons/pi";
 import type { MetaType, SortObject, ViewObj } from "~/helpers/types";
 import { api } from "~/utils/api";
@@ -190,6 +190,10 @@ export const SortPopUp: React.FC<{
   const { mutate: updateView } = api.views.update.useMutation();
   const [newSorterFieldChooser, setNewSorterFieldChooserState] =
     useState<boolean>(false);
+  const currentViewIdRef = useRef(currentViewId);
+  useEffect(() => {
+    currentViewIdRef.current = currentViewId;
+  }, [currentViewId]);
   const filteredColumns = columns.filter(
     (col) => !sortState.some((sorter) => sorter.field === col.header),
   );
@@ -203,13 +207,13 @@ export const SortPopUp: React.FC<{
     setViewState((prev) => {
       return prev.map(
         (view) =>
-          view.id === currentViewId
+          view.id === currentViewIdRef.current
             ? { ...view, sorterState: sortState } // Create a new object for the updated view
             : view, // Keep other views unchanged
       );
     });
-    if (currentViewId) {
-      updateView({ id: currentViewId, sorters: sortState });
+    if (currentViewIdRef.current) {
+      updateView({ id: currentViewIdRef.current, sorters: sortState });
     }
   }, [sortState, setViewState, updateView]);
   if (!isOpen) return null;
@@ -269,7 +273,6 @@ export const SortPopUp: React.FC<{
                       (filter) => filter.id !== sortObj.id,
                     );
                     setSortState(updatedSortState);
-                    console.log(columns);
                   }}
                 >
                   <RxCross1 size={14} className="text-gray-600" />

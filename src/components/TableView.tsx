@@ -1,7 +1,6 @@
 import type { Base, Table } from "@prisma/client";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
 import { IoChevronDownSharp } from "react-icons/io5";
 
 interface TableViewProps {
@@ -42,9 +41,7 @@ export const TableView = ({
     setPosition({ x: rect.left, y: rect.bottom });
     setModal(true);
   };
-  useEffect(() => {
-    console.log("current tableId", currentTableId);
-  }, [currentTableId]);
+  
   return (
     <div className="h-full">
       {isActive(id) ? (

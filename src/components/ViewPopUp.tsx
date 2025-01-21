@@ -15,7 +15,7 @@ export const ViewPopUp: React.FC<{
   currentViewId: string;
   setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setViewState: React.Dispatch<React.SetStateAction<View[]>>;
-  setCurrentView: React.Dispatch<React.SetStateAction<string | undefined>>;
+  setCurrentView: React.Dispatch<React.SetStateAction<string>>;
   selectedViewId: string;
   viewState: View[];
 }> = ({
@@ -38,7 +38,7 @@ export const ViewPopUp: React.FC<{
   const firstViewId =
     viewState[0]?.id === currentViewId ? viewState[1]?.id : viewState[0]?.id;
   const handleRedirect = () => {
-    setCurrentView(firstViewId);
+    setCurrentView(firstViewId!);
     void router.push({
       pathname: `/${baseId}/${tableId}/${firstViewId}`,
     });
@@ -72,10 +72,6 @@ export const ViewPopUp: React.FC<{
                   : view,
               ),
             );
-            const theName = viewState.find(
-              (v) => v.id === selectedViewId,
-            )?.name;
-            console.log(theName);
           }}
         >
           <div id="icon-container" className="mb-[2px]">

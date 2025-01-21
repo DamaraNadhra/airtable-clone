@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "~/utils/api";
 import { OutsideClick } from "outsideclick-react";
 import type { ViewObj } from "~/helpers/types";
@@ -23,9 +23,12 @@ export const HideFieldsPopUp: React.FC<{
   setViewState,
   columns,
 }) => {
-
   const [hiddenFieldState, setHiddenFieldState] = useState<string[]>([]);
   const { mutate: updateView } = api.views.update.useMutation();
+  const currentViewIdRef = useRef(currentView);
+  useEffect(() => {
+    currentViewIdRef.current = currentView;
+  }, [currentView]);
   const getIsChecked = (col: Column) => {
     return !hiddenFieldState.includes(col.id);
   };
@@ -39,7 +42,7 @@ export const HideFieldsPopUp: React.FC<{
     setViewState((prev) => {
       return prev.map(
         (view) =>
-          view.id === currentView
+          view.id === currentViewIdRef.current
             ? ({
                 ...view,
                 hiddenFields: hiddenFieldState,
@@ -47,8 +50,11 @@ export const HideFieldsPopUp: React.FC<{
             : view, // Keep other views unchanged
       );
     });
-    if (currentView) {
-      updateView({ id: currentView, hiddenFields: hiddenFieldState });
+    if (currentViewIdRef.current) {
+      updateView({
+        id: currentViewIdRef.current,
+        hiddenFields: hiddenFieldState,
+      });
     }
   }, [hiddenFieldState, setViewState, updateView]);
   if (!isOpen) return null;
@@ -68,58 +74,57 @@ export const HideFieldsPopUp: React.FC<{
           placeholder="Find a field"
         />
         <div className="mx-1 -mt-1 border-b border-gray-700 opacity-20"></div>
-        <div className="flex flex-col gap-2 ml-1">
-        {columns.map((col) => (
-          <div
-            key={col.id}
-            className="flex cursor-pointer flex-row gap-2 hover:bg-[#f2f2f2]"
-            onClick={() => {
-              console.log("haha");
-              setHiddenFieldState((prev) =>
-                hiddenFieldState.includes(col.id)
-                  ? prev.filter((id) => id !== col.id)
-                  : [...prev, col.id],
-              );
-            }}
-          >
-            <label className="flex cursor-pointer select-none items-center">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={getIsChecked(col)}
-                  onChange={() => {
-                    console.log("ticked");
-                  }}
-                  className="sr-only"
-                />
-                <div
-                  className={`block h-2 w-4 rounded-full ${getIsChecked(col) ? "bg-green-600" : "bg-[#EAEEFB]"}`}
-                ></div>
-                <div
-                  className={`dot absolute top-[1px] flex h-[6px] w-[6px] items-center justify-center rounded-full bg-white transition-transform duration-300`}
-                  style={{
-                    transform: getIsChecked(col)
-                      ? "translateX(0.5rem)"
-                      : "translateX(0.1rem)",
-                  }}
-                >
-                  <span className={`bg-primary h-1 w-1 rounded-full`}></span>
+        <div className="ml-1 flex flex-col gap-2">
+          {columns.map((col) => (
+            <div
+              key={col.id}
+              className="flex cursor-pointer flex-row gap-2 hover:bg-[#f2f2f2]"
+              onClick={() => {
+                setHiddenFieldState((prev) =>
+                  hiddenFieldState.includes(col.id)
+                    ? prev.filter((id) => id !== col.id)
+                    : [...prev, col.id],
+                );
+              }}
+            >
+              <label className="flex cursor-pointer select-none items-center">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={getIsChecked(col)}
+                    onChange={() => {
+                      console.log("ticked");
+                    }}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`block h-2 w-4 rounded-full ${getIsChecked(col) ? "bg-green-600" : "bg-[#EAEEFB]"}`}
+                  ></div>
+                  <div
+                    className={`dot absolute top-[1px] flex h-[6px] w-[6px] items-center justify-center rounded-full bg-white transition-transform duration-300`}
+                    style={{
+                      transform: getIsChecked(col)
+                        ? "translateX(0.5rem)"
+                        : "translateX(0.1rem)",
+                    }}
+                  >
+                    <span className={`bg-primary h-1 w-1 rounded-full`}></span>
+                  </div>
                 </div>
+              </label>
+              <div className="flex flex-row items-center gap-2">
+                <div
+                  id="icon-container"
+                  className="text-gray-800 text-opacity-75"
+                >
+                  {getIconComponent(col.icon, 15)}
+                </div>
+                <span className="text-[13px] text-gray-900 text-opacity-90">
+                  {col.name}
+                </span>
               </div>
-            </label>
-            <div className="flex flex-row items-center gap-2">
-              <div
-                id="icon-container"
-                className="text-gray-800 text-opacity-75"
-              >
-                {getIconComponent(col.icon, 15)}
-              </div>
-              <span className="text-[13px] text-gray-900 text-opacity-90">
-                {col.name}
-              </span>
             </div>
-          </div>
-        ))}
+          ))}
         </div>
         <div className="mt-2 flex flex-row justify-between gap-1">
           <span

@@ -1,7 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import cuid from "cuid";
 import OutsideClick from "outsideclick-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PiPlus, PiTrash } from "react-icons/pi";
 import { useDebounce } from "use-debounce";
 import { FaChevronDown } from "react-icons/fa6";
@@ -130,7 +130,6 @@ const FilterTypePopUp: React.FC<{
               key={filterKey}
               onClick={() => {
                 const { key, isNegative } = filter;
-                console.log(key, isNegative);
                 setFilterTypeModalOpen(false);
                 setFilterState((prev) => {
                   const updatedFilter = {
@@ -158,7 +157,6 @@ const FilterTypePopUp: React.FC<{
               key={filterKey}
               onClick={() => {
                 const { key, isNegative } = filter;
-                console.log(key, isNegative);
                 setFilterTypeModalOpen(false);
                 setFilterState((prev) => {
                   const updatedFilter = {
@@ -214,8 +212,6 @@ const FieldTypePopUp: React.FC<{
             const firstStringFilter = filterTypesString.contains;
             const firstNumberFilter = filterTypeNumber[">"];
             const colType = (col.meta as MetaType).type;
-            console.log("current filter columntype:", currentFilter.columnType);
-            console.log("chosen filter columnType:", colType);
             setFieldTypeModalOpen(false);
             setFilterState((prev) => {
               const updatedFilter = {
@@ -271,6 +267,10 @@ export const FilterPopUp: React.FC<{
     useState<boolean>(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const { mutate: updateView } = api.views.update.useMutation();
+  const currentViewIdRef = useRef(currentViewId);
+  useEffect(() => {
+    currentViewIdRef.current = currentViewId;
+  }, [currentViewId]);
   const inputDisabled = (key: string) =>
     key === "is empty" || key === "is not empty";
   const [currentChosenFilter, setCurrentFilter] = useState<FilterObjType>();
@@ -278,7 +278,9 @@ export const FilterPopUp: React.FC<{
   const [debouncedFilter] = useDebounce(filters, 400);
   const isDisabled = () => filters.length > 2;
   useEffect(() => {
-    const currentView = viewState.find((view) => view.id === currentViewId);
+    const currentView = viewState.find(
+      (view) => view.id === currentViewIdRef.current,
+    );
     if (currentView) {
       setFilters(currentView.filterState as FilterObjType[]);
     }
@@ -287,7 +289,7 @@ export const FilterPopUp: React.FC<{
     setViewState((prev) => {
       return prev.map(
         (view) =>
-          view.id === currentViewId
+          view.id === currentViewIdRef.current
             ? ({
                 ...view,
                 filterState: debouncedFilter,
@@ -295,13 +297,13 @@ export const FilterPopUp: React.FC<{
             : view, // Keep other views unchanged
       );
     });
-    if (currentViewId) {
-      updateView({ id: currentViewId, filters: debouncedFilter });
+    if (currentViewIdRef.current) {
+      updateView({ id: currentViewIdRef.current, filters: debouncedFilter });
     }
   }, [debouncedFilter, setViewState, updateView]);
-  // useEffect(() => {
-  //   setFilterState()
-  // }, [debouncedInput])
+  useEffect(() => {
+    console.log("current view id changed");
+  }, [currentViewId]);
   if (!isOpen) return null;
 
   return (

@@ -384,10 +384,6 @@ export const rowRouter = createTRPCRouter({
         where: { tableId: input.tableId },
       });
 
-      console.log(
-        "putangina",
-        ...(ORFilters.length === 0 ? [...ANDFilters, ...neutralFilter] : []),
-      );
       let nextCursor: string | undefined = undefined;
 
       if (cells.length > limit) {
@@ -426,18 +422,18 @@ export const rowRouter = createTRPCRouter({
             const valueB = cellB[sorterValue];
 
             if (typeof valueA === "number" && typeof valueB === "number") {
-              // Handle numeric values and sort by order
+              // sort numeric
               return sorter.order === "asc" ? valueA - valueB : valueB - valueA;
             }
 
             if (typeof valueA === "string" && typeof valueB === "string") {
-              // Handle string values and sort by order
+              // sort strings
               return sorter.order === "asc"
                 ? valueA.localeCompare(valueB)
                 : valueB.localeCompare(valueA);
             }
 
-            return 0; // No change if types do not match
+            return 0; 
           };
         });
         const combinedComparator = combineComparisonFunctions(compareFunctions);

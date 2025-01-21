@@ -14,7 +14,7 @@ import {
 } from "@tanstack/react-table";
 import { CiChat1 } from "react-icons/ci";
 import { api } from "~/utils/api";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Box } from "@chakra-ui/react";
 import { IoChevronDownSharp } from "react-icons/io5";
 import { FiArrowLeft, FiPlus } from "react-icons/fi";
@@ -80,7 +80,7 @@ interface ViewsListProps {
   id: string;
   tableId: string;
   isRenaming: boolean;
-  setCurrentView: React.Dispatch<React.SetStateAction<string | undefined>>;
+  setCurrentView: React.Dispatch<React.SetStateAction<string>>;
   setViewState: React.Dispatch<React.SetStateAction<ViewObj[]>>;
   currentViewId: string;
   viewState: ViewObj[];
@@ -117,7 +117,6 @@ const ViewsList = ({
           value={currentName}
           onChange={(e) => {
             setCurrentName(e.target.value);
-            console.log(name);
           }}
           onBlur={() => {
             setViewState((prev) => {
@@ -268,9 +267,6 @@ const ViewLayout: NextPage = () => {
     typeof viewId !== "string"
   )
     throw new Error("Invalid baseId or tableId");
-  useEffect(() => {
-    console.log("current table id: ", tableId);
-  }, [tableId]);
   const { user } = useUser();
   const [currentTableId, setTableId] = useState<string>(tableId);
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
@@ -290,18 +286,13 @@ const ViewLayout: NextPage = () => {
   const [sortPopUpState, setSortPopUpState] = useState<boolean>(false);
   const [hiddenFieldState, setHiddenFields] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterObj[]>([]);
-  useEffect(() => {
-    if (viewId) {
-      setCurrentView(viewId);
-    }
-  }, [viewId]);
   const [sorters, setSorters] = useState<SortObject[]>([]);
   const [columnPopUp, setColumnPopUpOpen] = useState<boolean>(false);
   const [tableModalOpen, setTableModalOpen] = useState(false);
   const [baseModalOpen, setBaseModalOpen] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [searchPopUpState, setSearchPopUpState] = useState<boolean>(false);
-  const [currentView, setCurrentView] = useState<string>();
+  const [currentView, setCurrentView] = useState<string>(viewId);
   const [popUpId, setPopUpId] = useState<string>("");
   const [selectedViewId, setSelectedViewId] = useState<string>("");
   const [viewPopUpModalOpen, setViewPopUpModalOpen] = useState<boolean>(false);
@@ -329,12 +320,15 @@ const ViewLayout: NextPage = () => {
   const [currentBase, setCurrentBase] = useState<Base | Record<string, string>>(
     fetchedBase ? (JSON.parse(fetchedBase as string) as Base) : {},
   );
+  const currentViewIdRef = useRef(currentView);
+  useEffect(() => {
+    currentViewIdRef.current = currentView;
+  }, [currentView]);
 
   useEffect(() => {
     if (viewsState.length > 0) {
       const currentViewObj = viewsState.find((v) => v.id === currentView);
       if (currentViewObj) {
-        console.log(currentViewObj.hiddenFields);
         setFilters(currentViewObj.filterState as FilterObj[]);
         setSorters(currentViewObj.sorterState as SortObject[]);
         setSearchState(currentViewObj.searchTerm);
@@ -365,13 +359,15 @@ const ViewLayout: NextPage = () => {
   useEffect(() => {
     setViewState((prev) =>
       prev.map((view) =>
-        view.id === currentView
+        view.id === currentViewIdRef.current
           ? { ...view, searchTerm: debouncedSearchTerm }
           : view,
       ),
     );
-    updateView({ id: currentView!, searchTerm: debouncedSearchTerm });
-    console.log("updating debounced search term");
+    updateView({
+      id: currentViewIdRef.current,
+      searchTerm: debouncedSearchTerm,
+    });
   }, [debouncedSearchTerm, updateView]);
   const [hideFieldsPopUpState, setHideFieldsPopUpState] =
     useState<boolean>(false);
@@ -619,7 +615,6 @@ const ViewLayout: NextPage = () => {
     },
   };
   useEffect(() => {
-    console.log(hiddenFieldState);
     if (!loadingColumnData && columnData) {
       const updatedColumns = columnData
         .filter((col) => !hiddenFieldState.includes(col.id))
@@ -663,7 +658,6 @@ const ViewLayout: NextPage = () => {
       ) => {
         setRows((old) =>
           old.map((row, index) => {
-            console.log(rowId);
             if (index === rowIndex) {
               updateCell({
                 columnId: colId,
@@ -682,7 +676,6 @@ const ViewLayout: NextPage = () => {
       },
     },
   });
-
 
   const { rows } = table.getRowModel();
   const rowVirtualizer = useVirtualizer({
@@ -952,14 +945,7 @@ const ViewLayout: NextPage = () => {
                     <div className="flex cursor-pointer items-center justify-normal rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <RxRows size={13} />
                     </div>
-                    <div
-                      className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]"
-                      onClick={() =>
-                        console.log(
-                          viewsState.find((v) => v.id === currentView),
-                        )
-                      }
-                    >
+                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
                       <PiArrowSquareOut size={15} />
                       <span>Share and sync</span>
                     </div>
@@ -1041,7 +1027,7 @@ const ViewLayout: NextPage = () => {
                         }}
                       >
                         <ViewsList
-                          currentViewId={currentView!}
+                          currentViewId={currentView}
                           isRenaming={view.isRenaming ?? false}
                           id={view.id}
                           name={view.name}
@@ -1231,15 +1217,11 @@ const ViewLayout: NextPage = () => {
                         <Box
                           className="table-cell w-[94px] cursor-pointer border-[1.2px] border-black border-opacity-10 bg-[#f2f2f2] pl-9 align-middle hover:bg-opacity-20"
                           height={"32px"}
-                          onContextMenu={() => console.log(rowsTemp)}
                           onClick={(e) => {
                             e.preventDefault();
                             if (e.button === 0) {
                               const isCloseToRight =
                                 e.clientX >= innerWidth - 300;
-                              console.log(isCloseToRight);
-                              console.log(e.clientX);
-                              console.log(innerWidth);
                               setMousePosition({
                                 x: isCloseToRight ? e.clientX - 150 : e.clientX,
                                 y: e.clientY,
@@ -1400,7 +1382,7 @@ const ViewLayout: NextPage = () => {
             viewState={viewsState}
             x={mousePosition.x}
             y={mousePosition.y}
-            currentView={currentView!}
+            currentView={currentView}
             setModalOpen={setHideFieldsPopUpState}
             setViewState={setViewState}
           />
@@ -1411,7 +1393,7 @@ const ViewLayout: NextPage = () => {
             y={mousePosition.y}
             filters={filters}
             currentColId={popUpId}
-            currentViewId={currentView!}
+            currentViewId={currentView}
             baseId={baseId}
             setViewState={setViewState}
             setColumnState={setColumns}
@@ -1447,7 +1429,7 @@ const ViewLayout: NextPage = () => {
             setViewState={setViewState}
             setModalOpen={setFilterPopUpState}
             viewState={viewsState}
-            currentViewId={currentView!}
+            currentViewId={currentView}
           />
           <SortPopUp
             viewState={viewsState}
@@ -1458,7 +1440,7 @@ const ViewLayout: NextPage = () => {
             tableId={tableId}
             setViewState={setViewState}
             setSortPopUpState={setSortPopUpState}
-            currentViewId={currentView!}
+            currentViewId={currentView}
           />
           <SearchPopUp
             searchState={searchState}
@@ -1469,7 +1451,7 @@ const ViewLayout: NextPage = () => {
             setSearchPopUpState={setSearchPopUpState}
           />
           <ViewPopUp
-            currentViewId={currentView!}
+            currentViewId={currentView}
             selectedViewId={selectedViewId}
             isOpen={viewPopUpModalOpen}
             baseId={baseId}
