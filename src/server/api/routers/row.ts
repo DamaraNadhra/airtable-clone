@@ -1,5 +1,5 @@
-import { faker, ne } from "@faker-js/faker";
-import type { Cell, Prisma, Row } from "@prisma/client";
+import { faker } from "@faker-js/faker";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
@@ -79,7 +79,7 @@ export const rowRouter = createTRPCRouter({
         data: rowRecords,
       });
 
-      const records = rows.flatMap((row, index) => {
+      const records = rows.flatMap((row) => {
         return columns.map((col, colIndex) => ({
           columnId: col.id,
           tableId: input.tableId,
@@ -394,9 +394,6 @@ export const rowRouter = createTRPCRouter({
         const nextItem = cells.pop();
         nextCursor = nextItem?.id;
       }
-      type RowModel = Row & {
-        cells: Cell[];
-      };
       const rows = cells.map((cell) => cell.row);
       function combineComparisonFunctions<T>(
         compareFunctions: Array<(a: T, b: T) => number>,

@@ -87,5 +87,6 @@ export const columnRouter = createTRPCRouter({
           name: input.newName,
         },
       });
+      return updatedCol;
     }),
 });

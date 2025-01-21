@@ -1,9 +1,7 @@
-import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { api } from "~/utils/api";
 import { OutsideClick } from "outsideclick-react";
 import type { ViewObj } from "~/helpers/types";
-import type { ColumnDef } from "@tanstack/react-table";
 import type { Column } from "@prisma/client";
 import { getIconComponent } from "~/helpers/getIconComponent";
 export const HideFieldsPopUp: React.FC<{
@@ -25,7 +23,6 @@ export const HideFieldsPopUp: React.FC<{
   setViewState,
   columns,
 }) => {
-  const { mutate: renameTable } = api.table.rename.useMutation({});
 
   const [hiddenFieldState, setHiddenFieldState] = useState<string[]>([]);
   const { mutate: updateView } = api.views.update.useMutation();
@@ -71,6 +68,7 @@ export const HideFieldsPopUp: React.FC<{
           placeholder="Find a field"
         />
         <div className="mx-1 -mt-1 border-b border-gray-700 opacity-20"></div>
+        <div className="flex flex-col gap-2 ml-1">
         {columns.map((col) => (
           <div
             key={col.id}
@@ -95,13 +93,13 @@ export const HideFieldsPopUp: React.FC<{
                   className="sr-only"
                 />
                 <div
-                  className={`block h-2 w-5 rounded-full ${getIsChecked(col) ? "bg-green-600" : "bg-[#EAEEFB]"}`}
+                  className={`block h-2 w-4 rounded-full ${getIsChecked(col) ? "bg-green-600" : "bg-[#EAEEFB]"}`}
                 ></div>
                 <div
-                  className={`dot absolute top-0 flex h-2 w-2 items-center justify-center rounded-full bg-white transition-transform duration-300`}
+                  className={`dot absolute top-[1px] flex h-[6px] w-[6px] items-center justify-center rounded-full bg-white transition-transform duration-300`}
                   style={{
                     transform: getIsChecked(col)
-                      ? "translateX(0.6rem)"
+                      ? "translateX(0.5rem)"
                       : "translateX(0.1rem)",
                   }}
                 >
@@ -122,6 +120,7 @@ export const HideFieldsPopUp: React.FC<{
             </div>
           </div>
         ))}
+        </div>
         <div className="mt-2 flex flex-row justify-between gap-1">
           <span
             className="cursor-pointer rounded-sm bg-[#f2f2f2] px-[50px] py-1 text-[11px] font-semibold text-gray-800 opacity-80 hover:opacity-100"

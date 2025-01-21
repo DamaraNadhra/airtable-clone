@@ -1,4 +1,4 @@
-import { Base, Table } from "@prisma/client";
+import type { Base, Table } from "@prisma/client";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect } from "react";

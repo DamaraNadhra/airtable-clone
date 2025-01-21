@@ -10,9 +10,15 @@ import type { Base, Table } from "@prisma/client";
 import { TableView } from "~/components/TableView";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { TablePopUp } from "~/components/TablePopUp";
+import { FaChevronDown, FaClockRotateLeft } from "react-icons/fa6";
+import { IoIosHelpCircleOutline } from "react-icons/io";
+import { PiBell, PiUsers } from "react-icons/pi";
+import Image from "next/image";
+import { useUser } from "@clerk/nextjs";
 
 const BaseLayout: NextPage = () => {
   const router = useRouter();
+  const { user } = useUser();
   const { id, tableid, tableState, currentTableId, currentBase } = router.query;
   if (typeof tableid !== "string" || typeof id !== "string") {
     throw new Error("slugs must be a string");
@@ -48,7 +54,7 @@ const BaseLayout: NextPage = () => {
         },
       });
     }
-  }, [viewsData, id, tableid, firstView, router]);
+  }, [viewsData, id, tableid, firstView, router, passedBaseState, tables]);
   return (
     <>
       <main className="flex h-screen w-screen flex-col overflow-x-hidden bg-[#f7f7f7]">
@@ -58,54 +64,94 @@ const BaseLayout: NextPage = () => {
             className="flex h-[56px] w-full flex-row items-center justify-between bg-[#007da1]"
           >
             <div className="flex h-[24px] w-[24px] flex-row items-center justify-between gap-2 pl-4 text-white">
-              <div
-                id="icon-container"
-                className="group flex cursor-pointer p-1"
-              >
+              <div className="flex flex-row justify-normal gap-[1px]">
                 <div
-                  className="hidden rounded-full bg-white p-[6px] opacity-0 transition-opacity duration-300 group-hover:flex group-hover:opacity-100"
-                  onClick={() => {
-                    void router.push("/");
-                  }}
+                  id="icon-container"
+                  className="group ml-[1px] mt-[3px] flex h-[32px] w-[32px] cursor-pointer p-1"
                 >
-                  <FiArrowLeft className="text-[#007da1]" size={12} />
+                  <div
+                    className="hidden rounded-full bg-white p-[6px] opacity-0 transition-opacity duration-300 group-hover:flex group-hover:opacity-100"
+                    onClick={() => {
+                      void router.push("/");
+                    }}
+                  >
+                    <FiArrowLeft className="text-[#007da1]" size={12} />
+                  </div>
+                  <div className="group-hover:hidden">
+                    <SiAirtable size={21} />
+                  </div>
                 </div>
-                <div className="group-hover:hidden">
-                  <SiAirtable size={21} />
+                <div className="flex cursor-pointer flex-row items-center justify-between gap-2 pl-2">
+                  <span className="text-[17px] font-[675] text-white text-opacity-90 hover:text-opacity-95">
+                    {passedBaseState.name}
+                  </span>
+                  <div>
+                    <IoChevronDownSharp size={13} />
+                  </div>
                 </div>
               </div>
-              <div className="flex cursor-pointer flex-row items-center justify-between gap-2 pl-2">
-                <span className="text-[17px] font-semibold">
-                  {passedBaseState.name}
-                </span>
-                <div>
-                  <IoChevronDownSharp size={13} />
-                </div>
-              </div>
-              <div className="ml-2 cursor-default rounded-full border-[1px] border-[#1b6074] bg-[#006a89] px-[11px] py-[4px] text-[12.5px] text-gray-200 shadow-inner hover:bg-cyan-800 hover:bg-opacity-40">
+
+              <div className="ml-2 cursor-default rounded-full border-[1px] border-[#1b6074] bg-[#006a89] px-[11px] py-[4px] text-[13px] text-white text-opacity-95 shadow-inner hover:bg-cyan-800 hover:bg-opacity-40">
                 Data
               </div>
-              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12px] text-gray-200 hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[13px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
                 Automations
               </div>
-              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12px] text-gray-200 hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[13px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
                 Interfaces
               </div>
-              <div className="border-r border-white"></div>
-              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[12px] text-gray-200 hover:bg-cyan-800 hover:bg-opacity-40">
+              <div className="h-5 border-r border-slate-300 border-opacity-30 pr-1"></div>
+              <div className="cursor-pointer rounded-full px-3 py-[6px] text-[13px] text-white text-opacity-80 hover:bg-cyan-800 hover:bg-opacity-40">
                 Forms
               </div>
             </div>
-            <div className="flex flex-row justify-between"></div>
+            <div className="mr-4 flex flex-row items-center justify-between gap-4">
+              <div className="-mr-3 cursor-pointer rounded-full p-2 px-3 text-white text-opacity-70 hover:bg-[#00708f]">
+                <FaClockRotateLeft size={12} />
+              </div>
+              <div
+                className="-mr-2 flex cursor-pointer flex-row items-center gap-[4px] rounded-full bg-transparent px-3 py-[6px] text-white text-opacity-80 hover:bg-[#00708f]"
+                id="help-button"
+              >
+                <div id="icon-container" className="">
+                  <IoIosHelpCircleOutline size={16} />
+                </div>
+                <span className="text-[13px]">Help</span>
+              </div>
+              <div
+                className="flex cursor-pointer flex-row items-center gap-[5px] rounded-full border-[1px] border-black border-opacity-20 bg-[#005e79] px-[11px] py-[5px] text-[13px] text-white shadow-inner"
+                id="help-button"
+              >
+                Trial: 5 days left
+              </div>
+              <div className="flex cursor-pointer flex-row items-center gap-[5px] rounded-full bg-transparent bg-white px-3 py-[5px] text-[#007da1] opacity-95 hover:opacity-100">
+                <div id="icon-container" className="">
+                  <PiUsers size={16} />
+                </div>
+                <span className="font- text-[13px]">Share</span>
+              </div>
+              <div className="cursor-pointer rounded-full bg-white p-[6px] text-[#007da1] opacity-90 hover:opacity-100">
+                <div>
+                  <PiBell size={16} />
+                </div>
+              </div>
+              <Image
+                src={user?.imageUrl ?? ""}
+                alt="Profile Image"
+                className="h-7 w-7 cursor-pointer rounded-full outline outline-1 outline-white"
+                width={56}
+                height={56}
+              />
+            </div>
           </div>
 
-          <div className="absolute left-0 right-0 top-[56px] h-[32px] overflow-auto overflow-y-hidden bg-[#007091]">
-            <div className="flex h-full flex-row pl-3">
+          <div className="absolute left-0 right-0 top-[56px] flex h-[32px] w-full flex-row gap-2 overflow-auto overflow-y-hidden bg-[#007da1]">
+            <div className="flex h-full flex-grow flex-row pl-3 bg-[#007091]">
               {tables.map((table) => (
                 <TableView
                   {...table}
                   setPopUpId={setPopUpId}
-                  currentTableId={currentTableId as string}
+                  currentTableId={currentTableid}
                   setModal={setTableModalOpen}
                   currentBase={passedBaseState}
                   setTableId={setTableId}
@@ -120,6 +166,17 @@ const BaseLayout: NextPage = () => {
                   className="text-slate-300 hover:text-slate-200"
                 />
               </button>
+            </div>
+            <div className="flex h-full w-[157.71px] flex-row items-center bg-[#007091] text-white">
+              <span className="cursor-pointer px-3 text-white text-opacity-80 hover:text-opacity-90">
+                Extensions
+              </span>
+              <span className="flex cursor-pointer flex-row items-center gap-2 px-3 text-white text-opacity-80 hover:text-opacity-90">
+                <span>Tools</span>
+                <div>
+                  <FaChevronDown size={10} />
+                </div>
+              </span>
             </div>
           </div>
         </div>

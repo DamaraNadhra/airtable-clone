@@ -1,4 +1,3 @@
-import { GeistSans } from "geist/font/sans";
 import { type AppType } from "next/app";
 import { Toaster } from "react-hot-toast";
 import airtableLogo from "src/images/Airtable-Logo-cropped.jpg";

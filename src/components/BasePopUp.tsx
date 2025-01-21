@@ -6,7 +6,7 @@ import { PiArrowSquareOut } from "react-icons/pi";
 import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import { api } from "~/utils/api";
 import OutsideClick from "outsideclick-react";
-import { Base } from "@prisma/client";
+import type { Base } from "@prisma/client";
 
 const AnotherPopUp: React.FC<{
   x: number;

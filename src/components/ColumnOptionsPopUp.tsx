@@ -1,15 +1,10 @@
-import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
 import { api } from "~/utils/api";
 import { OutsideClick } from "outsideclick-react";
-import type { Base, Table } from "@prisma/client";
-import { FiArrowUpCircle } from "react-icons/fi";
-import { BsChevronBarRight, BsEye, BsEyeSlash } from "react-icons/bs";
-import { IoChevronForward, IoFilterOutline } from "react-icons/io5";
+import {  BsEyeSlash } from "react-icons/bs";
+import { IoFilterOutline } from "react-icons/io5";
 import {
   PiArrowLeft,
-  PiArrowLeftLight,
   PiArrowRight,
   PiCopy,
   PiEnvelopeSimple,
@@ -20,14 +15,11 @@ import {
   PiSortDescending,
   PiTrash,
 } from "react-icons/pi";
-import { LuChartGantt } from "react-icons/lu";
 import { AiOutlineInfoCircle } from "react-icons/ai";
 import { HiOutlineLockClosed } from "react-icons/hi";
-import { RxCross1 } from "react-icons/rx";
-import { FaArrowLeft } from "react-icons/fa6";
 import { FaRegListAlt } from "react-icons/fa";
-import { ColumnDef } from "@tanstack/react-table";
-import { FilterObj, MetaType, SortObject, ViewObj } from "~/helpers/types";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { FilterObj, MetaType, SortObject, ViewObj } from "~/helpers/types";
 import cuid from "cuid";
 import { NumberOrder, StringOrder } from "~/helpers/getIconComponent";
 export const ColumnOptionsPopUp: React.FC<{
@@ -53,7 +45,6 @@ export const ColumnOptionsPopUp: React.FC<{
   setRowState,
   setModalOpen,
   setColumnState,
-  baseId,
   sorters,
   columnsState,
   currentColId,
@@ -61,13 +52,10 @@ export const ColumnOptionsPopUp: React.FC<{
   setViewState,
   currentViewId,
 }) => {
-  const ctx = api.useUtils();
-  const router = useRouter();
   const [renameModalOpen, setRenameModal] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>("");
 
   const { mutate: renameColumn } = api.columns.update.useMutation();
-  const { mutate: delBase } = api.base.deleteById.useMutation();
   const selectedColumn = columnsState.find((col) => col.id === currentColId);
   useEffect(() => {
     if (selectedColumn) {

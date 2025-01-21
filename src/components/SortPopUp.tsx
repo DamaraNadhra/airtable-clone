@@ -1,4 +1,3 @@
-import type { Column, View } from "@prisma/client";
 import type { ColumnDef } from "@tanstack/react-table";
 import cuid from "cuid";
 import OutsideClick from "outsideclick-react";
@@ -13,8 +12,6 @@ import {
   NumberOrder,
   StringOrder,
 } from "~/helpers/getIconComponent";
-import toast from "react-hot-toast";
-import { MdArrowRightAlt } from "react-icons/md";
 
 const NewSorterPopUp: React.FC<{
   x: number;
@@ -176,7 +173,6 @@ export const SortPopUp: React.FC<{
 }> = ({
   x,
   y,
-  tableId,
   columns,
   isOpen,
   setSortPopUpState,

@@ -7,14 +7,10 @@ import {
   flexRender,
   type ColumnDef,
   createColumnHelper,
-  type SortingState,
   getSortedRowModel,
-  type OnChangeFn,
-  Cell,
-  Header,
-  Table as TanstackTable,
-  TableFeature,
-  Row,
+  type Cell,
+  type Header,
+  type Table as TanstackTable,
 } from "@tanstack/react-table";
 import { CiChat1 } from "react-icons/ci";
 import { api } from "~/utils/api";
@@ -26,12 +22,10 @@ import { RxHamburgerMenu } from "react-icons/rx";
 import { VscTable } from "react-icons/vsc";
 import {
   PiArrowDown,
-  PiArrowLeft,
   PiArrowUp,
   PiBell,
   PiCalendar,
   PiCopy,
-  PiPencilSimple,
   PiPlus,
   PiUsers,
   PiUsersThree,
@@ -95,8 +89,6 @@ interface ViewsListProps {
 const ViewsList = ({
   name,
   id,
-  tableId,
-  setCurrentView,
   isRenaming,
   setViewState,
   currentViewId,
@@ -263,7 +255,6 @@ const PopUp: React.FC<{
 
 const ViewLayout: NextPage = () => {
   const router = useRouter();
-  const ctx = api.useUtils();
   const {
     id: baseId,
     tableid: tableId,
@@ -283,7 +274,6 @@ const ViewLayout: NextPage = () => {
   const { user } = useUser();
   const [currentTableId, setTableId] = useState<string>(tableId);
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
-  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [currentTables, setTables] = useState<Table[]>(
     tableState ? (JSON.parse(tableState as string) as Table[]) : [],
@@ -607,7 +597,6 @@ const ViewLayout: NextPage = () => {
   };
   const defaultColumn: Partial<ColumnDef<Record<string, string>>> = {
     cell: ({
-      cell: { id: cellId },
       getValue,
       row,
       column: {
@@ -628,9 +617,6 @@ const ViewLayout: NextPage = () => {
         />
       );
     },
-  };
-  type rowSelectionMeta = {
-    isUtilityColumn: boolean;
   };
   useEffect(() => {
     console.log(hiddenFieldState);
@@ -697,17 +683,6 @@ const ViewLayout: NextPage = () => {
     },
   });
 
-  const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
-    setSorting(updater);
-    if (!!table.getRowModel().rows.length) {
-      rowVirtualizer.scrollToIndex?.(0);
-    }
-  };
-
-  table.setOptions((prev) => ({
-    ...prev,
-    onSortingChange: handleSortingChange,
-  }));
 
   const { rows } = table.getRowModel();
   const rowVirtualizer = useVirtualizer({

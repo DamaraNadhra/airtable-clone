@@ -5,7 +5,7 @@ import { api } from "~/utils/api";
 import { OutsideClick } from "outsideclick-react";
 import type { Base, Table } from "@prisma/client";
 import { FiArrowUpCircle } from "react-icons/fi";
-import { BsChevronBarRight, BsEyeSlash } from "react-icons/bs";
+import { BsEyeSlash } from "react-icons/bs";
 import { IoChevronForward } from "react-icons/io5";
 import {
   PiCopy,
@@ -42,7 +42,6 @@ export const TablePopUp: React.FC<{
   setTableState,
   setCurrentTableId,
 }) => {
-  const ctx = api.useUtils();
   const router = useRouter();
   const [renameModalOpen, setRenameModal] = useState<boolean>(false);
   const { data: selectedTable } = api.table.getTableById.useQuery({ tableId });
