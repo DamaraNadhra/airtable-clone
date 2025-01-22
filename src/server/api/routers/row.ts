@@ -407,7 +407,7 @@ export const rowRouter = createTRPCRouter({
           return (a: (typeof rows)[number], b: (typeof rows)[number]) => {
             const sorterValue =
               sorter.type === "text" ? "stringValue" : "intValue";
-
+            
             // Find the cells to compare
             const cellA = a.cells.find(
               (cell) => cell.column.name === sorter.field,
@@ -446,4 +446,5 @@ export const rowRouter = createTRPCRouter({
         totalCount,
       };
     }),
+  
 });
