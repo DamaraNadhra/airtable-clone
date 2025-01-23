@@ -26,12 +26,12 @@ export const SearchPopUp: React.FC<{
           type="text"
           placeholder="Find in view"
           value={searchState}
-          className="flex items-center px-2 py-2 outline-none placeholder:text-sm placeholder:font-semibold"
+          className="flex items-center px-2 py-2 outline-none placeholder:text-[13px] placeholder:font-[550] placeholder:text-gray-700 placeholder:text-opacity-70"
           onChange={(e) => {
             setSearchState(e.target.value);
           }}
         />
-        <div className="flex h-[30px] grow items-center bg-[#f2f2f2] px-2 text-gray-500">
+        <div className="flex h-[30px] text-[11px] grow items-center bg-[#f2f2f2] px-2 text-gray-500">
           Use advanced search option in the...
         </div>
       </div>

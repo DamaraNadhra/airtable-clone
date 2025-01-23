@@ -441,7 +441,7 @@ const ViewLayout: NextPage = () => {
     if (
       (typeof cellValue === "string" || typeof cellValue === "number") &&
       debouncedSearchTerm &&
-      String(cellValue).includes(debouncedSearchTerm)
+      String(cellValue).includes(debouncedSearchTerm.trim())
     ) {
       return "bg-[#ffd17e]";
     }
@@ -875,7 +875,7 @@ const ViewLayout: NextPage = () => {
                 ) : (
                   <>
                     <div className="h-4 w-[1px] border-r-[1px] border-black pr-1 opacity-30"></div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-sm px-2 py-1 text-[13px] font-[500] transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                    <div className="delay-[35ms] flex cursor-pointer flex-row items-center justify-normal gap-2 rounded-sm px-2 py-1 text-[13px] font-[500] transition-colors hover:bg-[#f2f2f2]">
                       <div className="-mr-1 items-center pt-[1px]">
                         <VscTable className="text-[#166EE1]" size={17} />
                       </div>
@@ -884,7 +884,7 @@ const ViewLayout: NextPage = () => {
                       <BsChevronDown size={12} />
                     </div>
                     <div
-                      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] ${hiddenFieldState.length > 0 ? "bg-[#beecfe] hover:ring-2 hover:ring-inset hover:ring-[#abd4e4]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
+                      className={`delay-[35ms] flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors ${hiddenFieldState.length > 0 ? "bg-[#beecfe] hover:ring-2 hover:ring-inset hover:ring-[#abd4e4]" : "delay-[35ms] transition-colors hover:bg-[#f2f2f2]"}`}
                       onClick={(e) => {
                         e.preventDefault();
                         const element = e.currentTarget;
@@ -901,7 +901,7 @@ const ViewLayout: NextPage = () => {
                       </span>
                     </div>
                     <div
-                      className={`flex w-auto cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 ${filters.length > 0 ? "bg-[#caf4d3] hover:ring-2 hover:ring-inset hover:ring-[#b5dbbd]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
+                      className={`flex w-auto cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 ${filters.length > 0 ? "bg-[#caf4d3] hover:ring-2 hover:ring-inset hover:ring-[#b5dbbd]" : "delay-[35ms] transition-colors hover:bg-[#f2f2f2]"}`}
                       onClick={(e) => {
                         e.preventDefault();
                         const element = e.currentTarget;
@@ -917,12 +917,12 @@ const ViewLayout: NextPage = () => {
                           : "Filter"}
                       </span>
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                    <div className="delay-[35ms] flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 transition-colors hover:bg-[#f2f2f2]">
                       <AiOutlineGroup size={15} />
                       <span>Group</span>
                     </div>
                     <div
-                      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 ${sorters.length > 0 ? "bg-[#ffe0cd] hover:ring-2 hover:ring-inset hover:ring-[#e5c9b8]" : "transition-colors delay-[35ms] hover:bg-[#f2f2f2]"}`}
+                      className={`flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-[4px] px-2 py-1 text-[13px] text-gray-800 ${sorters.length > 0 ? "bg-[#ffe0cd] hover:ring-2 hover:ring-inset hover:ring-[#e5c9b8]" : "delay-[35ms] transition-colors hover:bg-[#f2f2f2]"}`}
                       onClick={(e) => {
                         e.preventDefault();
                         const element = e.currentTarget;
@@ -938,14 +938,14 @@ const ViewLayout: NextPage = () => {
                           : "Sort"}
                       </span>
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                    <div className="delay-[35ms] flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors hover:bg-[#f2f2f2]">
                       <PiPaintBucket size={16} />
                       <span>Color</span>
                     </div>
-                    <div className="flex cursor-pointer items-center justify-normal rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                    <div className="delay-[35ms] flex cursor-pointer items-center justify-normal rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors hover:bg-[#f2f2f2]">
                       <RxRows size={13} />
                     </div>
-                    <div className="flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors delay-[35ms] hover:bg-[#f2f2f2]">
+                    <div className="delay-[35ms] flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors hover:bg-[#f2f2f2]">
                       <PiArrowSquareOut size={15} />
                       <span>Share and sync</span>
                     </div>
@@ -1159,7 +1159,7 @@ const ViewLayout: NextPage = () => {
                   >
                     {table.getHeaderGroups().map((headerGroup) => (
                       <Box className="table-header-group" key={headerGroup.id}>
-                        <Box className="table-cell w-14 border-y-[1.2px] border-l-[1.2px] border-black border-opacity-10 bg-[#f2f2f2] align-middle">
+                        <Box className="table-cell w-14 border-y-[1px] border-black border-opacity-10 bg-[#f2f2f2] align-middle">
                           <input
                             id="select-all-checkbox"
                             type="checkbox"
@@ -1171,7 +1171,7 @@ const ViewLayout: NextPage = () => {
                         </Box>
                         {headerGroup.headers.map((header) => (
                           <Box
-                            className={`table-cell border-y-[1.2px] border-r-[1.2px] border-black border-opacity-10 text-start align-middle text-[13px] ${handleHighLightHeader(header)}`}
+                            className={`table-cell border-y-[1px] border-r-[1px] border-black border-opacity-10 text-start align-middle text-[13px] ${handleHighLightHeader(header)}`}
                             height="32px"
                             key={header.id}
                             style={{
@@ -1215,7 +1215,7 @@ const ViewLayout: NextPage = () => {
                           </Box>
                         ))}
                         <Box
-                          className="table-cell w-[94px] cursor-pointer border-[1.2px] border-black border-opacity-10 bg-[#f2f2f2] pl-9 align-middle hover:bg-opacity-20"
+                          className="table-cell w-[94px] cursor-pointer border-y-[1.2px] border-r-[1.2px] border-black border-opacity-10 bg-[#f2f2f2] pl-9 align-middle hover:bg-opacity-20"
                           height={"32px"}
                           onClick={(e) => {
                             e.preventDefault();
@@ -1261,21 +1261,23 @@ const ViewLayout: NextPage = () => {
                             transform: `translateY(${virtualRow.start}px)`,
                           }}
                         >
-                          <Box className="table-cell h-[32px] w-14 border-y-[1.1px] border-black border-opacity-10 bg-white px-[21px] text-start align-middle group-hover:bg-inherit">
-                            <input
-                              id="cell-checkbox"
-                              type="checkbox"
-                              checked={row!.getIsSelected()}
-                              className="peer -ml-2 hidden h-3 w-3 rounded border-y-[1.1px] border-r-[1.1px] border-black border-opacity-20 bg-gray-100 text-blue-600 checked:flex group-hover:flex dark:border-gray-600 dark:bg-gray-700"
-                              onChange={row!.getToggleSelectedHandler()}
-                            />
-                            <span className="-ml-2 text-[12px] opacity-50 group-hover:hidden peer-checked:hidden">
-                              {virtualRow.index + 1}
-                            </span>
+                          <Box className="table-cell h-[32px] w-14 border-y-[1px] border-black border-opacity-10 bg-white px-[21px] text-start align-middle group-hover:bg-inherit">
+                            <div className="-ml-4 flex items-center justify-center">
+                              <input
+                                id="cell-checkbox"
+                                type="checkbox"
+                                checked={row!.getIsSelected()}
+                                className="peer hidden h-3 w-3 rounded border-y-[1.1px] border-r-[1.1px] border-black border-opacity-20 bg-gray-100 text-blue-600 checked:flex group-hover:flex dark:border-gray-600 dark:bg-gray-700"
+                                onChange={row!.getToggleSelectedHandler()}
+                              />
+                              <span className="text-[12px] opacity-50 group-hover:hidden peer-checked:hidden">
+                                {virtualRow.index + 1}
+                              </span>
+                            </div>
                           </Box>
                           {row?.getVisibleCells().map((cell) => (
                             <Box
-                              className={`border-black-4 table-cell border-y-[1.1px] border-r-[1.1px] border-black border-opacity-10 align-middle text-sm ${handleHighLightCell(cell)}`}
+                              className={`border-black-4 table-cell border-y-[1px] border-r-[1px] border-black border-opacity-10 align-middle text-sm ${handleHighLightCell(cell)}`}
                               w={cell.column.getSize()}
                               height="32px"
                               key={cell.id}
@@ -1291,7 +1293,7 @@ const ViewLayout: NextPage = () => {
                     })}
                   </Box>
                   <div
-                    className="flex h-[32px] cursor-pointer border bg-white text-black hover:bg-[#f2f2f2]"
+                    className="flex h-[32px] cursor-pointer border-x-[1px] border-b-[1px] border-black border-opacity-10 bg-white text-black hover:bg-[#f2f2f2]"
                     style={{
                       width: table.getTotalSize() + 56,
                     }}
