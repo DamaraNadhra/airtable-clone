@@ -48,7 +48,7 @@ import cuid from "cuid";
 
 const BaseLayout = (props: PropsWithChildren) => {
   return (
-    <div className="flex h-auto w-[336px] cursor-pointer flex-col gap-1 rounded-lg border-2 bg-white p-4 hover:shadow-md">
+    <div className="flex h-auto flex-shrink cursor-pointer flex-col gap-1 rounded-lg border-2 bg-white p-4 hover:shadow-md">
       {props.children}
     </div>
   );
@@ -59,7 +59,7 @@ const BaseView = (props: BaseKind) => {
   const router = useRouter();
   return (
     <div
-      className="flex h-[95px] w-auto max-w-[336px] flex-shrink cursor-pointer flex-col gap-2 rounded-lg border-2 bg-white hover:shadow-md"
+      className="flex h-[95px] w-auto flex-shrink cursor-pointer flex-col gap-2 rounded-lg border-2 bg-white hover:shadow-md"
       key={props.id}
       onClick={() => {
         router.push(`/${props.id}`);
@@ -92,11 +92,11 @@ export default function Home() {
   return (
     <>
       <main className="relative flex h-screen w-screen flex-col overflow-x-hidden">
-        <div className="fixed left-0 right-0 top-0 flex h-[56px] flex-row items-center justify-between border-b py-2 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]">
-          <div className="ml-3 flex flex-row items-center gap-4">
+        <div className="fixed left-0 right-0 top-0 z-20 flex h-[56px] w-full flex-row items-center justify-between gap-8 border-b bg-white py-2 pl-2 pr-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]">
+          <div className="ml-1 flex flex-shrink-0 flex-row items-center gap-4">
             <div
               id="hamburg-menu-container"
-              className="cursor-pointer opacity-30 hover:opacity-60"
+              className="hidden cursor-pointer opacity-30 hover:opacity-60 md:flex lg:flex"
             >
               <LuMenu size={20} />
             </div>
@@ -106,7 +106,7 @@ export default function Home() {
               className="h-[28px] w-[108px]"
             />
           </div>
-          <div className="flex w-[354px] flex-row items-center gap-2 rounded-full border-2 border-gray-300 border-opacity-50 px-4 py-[6px] hover:cursor-pointer hover:shadow-md">
+          <div className="flex min-w-0 max-w-[354px] flex-1 flex-row items-center gap-2 rounded-full border-2 border-gray-300 border-opacity-50 py-[6px] pl-4 hover:cursor-pointer hover:shadow-md">
             <div className="">
               <HiMagnifyingGlass size={17} />
             </div>
@@ -115,9 +115,9 @@ export default function Home() {
               placeholder="Search..."
             />
           </div>
-          <div className="mr-5 flex flex-row gap-4">
+          <div className="flex flex-shrink-0 flex-row gap-4">
             <div
-              className="flex cursor-pointer flex-row items-center gap-1 rounded-full bg-white px-2 text-black text-opacity-75 hover:bg-[#f2f2f2] hover:bg-opacity-80"
+              className="flex w-auto cursor-pointer flex-row items-center gap-1 rounded-full bg-white px-2 text-black text-opacity-75 hover:bg-[#f2f2f2] hover:bg-opacity-80"
               id="help-button"
             >
               <div id="icon-container" className="">
@@ -131,18 +131,20 @@ export default function Home() {
             >
               <PiBell size={16} />
             </div>
-            <SignOutButton>
-              <Image
-                src={user?.imageUrl ?? ""}
-                alt="Profile Image"
-                className="h-7 w-7 cursor-pointer rounded-full"
-                width={56}
-                height={56}
-              />
-            </SignOutButton>
+            <div className="flex flex-shrink-0">
+              <SignOutButton>
+                <Image
+                  src={user?.imageUrl ?? ""}
+                  alt="Profile Image"
+                  className="h-7 w-7 cursor-pointer rounded-full"
+                  width={56}
+                  height={56}
+                />
+              </SignOutButton>
+            </div>
           </div>
         </div>
-        <div className="h-[60px]"></div>
+        <div className="mt-[60px] w-full"></div>
         <div id="after the header" className="flex grow flex-row">
           <div className="relative">
             <div
@@ -260,7 +262,7 @@ export default function Home() {
           <div className="w-[47px]"></div>
           <div className="flex w-full flex-col gap-7 bg-[#f8fafb] px-[3rem] pt-[1.5rem]">
             <h1 className="m-0 scale-y-110 text-[27px] font-[675]">Home</h1>
-            <div className="grid justify-start gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid justify-start gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               <BaseLayout>
                 <div className="flex flex-row items-center gap-2">
                   <div id="icon-container">
@@ -319,7 +321,7 @@ export default function Home() {
               <span className="hover:cursor-pointer">Opened by you ⌵</span>
               <span className="hover:cursor-pointer">Show all types ⌵</span>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {baseData?.map((base) => <BaseView {...base} />)}
             </div>
           </div>
