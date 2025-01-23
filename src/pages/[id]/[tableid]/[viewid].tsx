@@ -1278,7 +1278,9 @@ const ViewLayout: NextPage = () => {
                           {row?.getVisibleCells().map((cell) => (
                             <Box
                               className={`border-black-4 table-cell border-y-[1px] border-r-[1px] border-black border-opacity-10 align-middle text-sm ${handleHighLightCell(cell)}`}
-                              w={cell.column.getSize()}
+                              style={{
+                                minWidth: cell.column.getSize(),
+                              }}
                               height="32px"
                               key={cell.id}
                             >
@@ -1293,7 +1295,7 @@ const ViewLayout: NextPage = () => {
                     })}
                   </Box>
                   <div
-                    className="flex h-[32px] cursor-pointer border-x-[1px] border-b-[1px] border-black border-opacity-10 bg-white text-black hover:bg-[#f2f2f2]"
+                    className="flex h-[32px] cursor-pointer border-r-[1px] border-b-[1px] border-black border-opacity-10 bg-white text-black hover:bg-[#f2f2f2]"
                     style={{
                       width: table.getTotalSize() + 56,
                     }}
@@ -1314,7 +1316,7 @@ const ViewLayout: NextPage = () => {
                       });
                     }}
                   >
-                    <div className="flex h-full w-[236px] items-center border-r pl-2">
+                    <div className="flex h-full w-[236px] items-center border-r-[1px] pl-2">
                       <PiPlus size={17} />
                     </div>
                   </div>
