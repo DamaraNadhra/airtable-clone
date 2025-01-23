@@ -29,7 +29,7 @@ const filterTypesString: Record<string, FilterType> = {
     isNegative: false,
     key: "contains",
   },
-  "not contains": {
+  "does not contains...": {
     isNegative: true,
     key: "contains",
   },
@@ -119,7 +119,7 @@ const FilterTypePopUp: React.FC<{
   if (!isOpen) return null;
   return (
     <div
-      className="fixed z-20 flex w-[130px] flex-col gap-0 rounded-sm bg-white p-3 text-sm shadow-md"
+      className="fixed z-20 flex w-auto flex-col gap-0 rounded-sm bg-white p-3 text-sm shadow-md"
       style={{ left: `${x}px`, top: `${y}px` }}
     >
       {currentFilterObj.columnType === "text" ? (
@@ -337,7 +337,7 @@ export const FilterPopUp: React.FC<{
                 >
                   {filterObj.type !== "neutral" ? (
                     <button
-                      className={`mr-2 flex h-[30px] w-[60px] items-center justify-between border px-2 ${isDisabled() ? "cursor-default" : "cursor-pointer hover:bg-[#f2f2f2]"}`}
+                      className={`mr-2 flex h-[30px] w-[60px] items-center justify-between border rounded-sm px-2 ${isDisabled() ? "cursor-default" : "cursor-pointer hover:bg-[#f2f2f2]"}`}
                       disabled={isDisabled()}
                       onClick={(e) => {
                         const element = e.currentTarget;
@@ -356,10 +356,10 @@ export const FilterPopUp: React.FC<{
                       )}
                     </button>
                   ) : (
-                    <span className="mr-2 w-[60px] text-start">Where</span>
+                    <span className="mr-2 w-[60px] text-center">Where</span>
                   )}
                   <div
-                    className="flex h-[30px] w-[120px] cursor-pointer flex-row items-center justify-between border-[1px] px-2 hover:bg-[#f2f2f2]"
+                    className="flex h-[30px] w-[120px] cursor-pointer rounded-l-sm flex-row items-center justify-between border-[1px] px-2 hover:bg-[#f2f2f2]"
                     onClick={(e) => {
                       setFieldTypeModal(true);
                       const element = e.currentTarget;
@@ -374,7 +374,7 @@ export const FilterPopUp: React.FC<{
                     </div>
                   </div>
                   <div
-                    className={`flex h-[30px] w-[100px] cursor-pointer flex-row items-center justify-between border-[1px] px-2 hover:bg-[#f2f2f2]`}
+                    className={`flex h-[30px] w-[100px] cursor-pointer flex-row items-center justify-between border-y-[1px] border-r-[1px] px-2 hover:bg-[#f2f2f2]`}
                     onClick={(e) => {
                       setFilterTypeModal(true);
                       const element = e.currentTarget;
@@ -383,7 +383,7 @@ export const FilterPopUp: React.FC<{
                       setMousePosition({ x: rect.left, y: rect.bottom + 5 });
                     }}
                   >
-                    <span>{filterObj.filterKey}</span>
+                    <span className="truncate">{filterObj.filterKey}</span>
                     <div id="icon-container">
                       <FaChevronDown size={12} />
                     </div>
@@ -393,7 +393,7 @@ export const FilterPopUp: React.FC<{
                     placeholder={
                       inputDisabled(filterObj.filterKey) ? "" : "type something"
                     }
-                    className="h-[30px] border px-2 outline-none"
+                    className="h-[30px] border-y-[1px] border-r-[1px] px-2 outline-none"
                     value={filterObj.value ?? ""}
                     onChange={(e) => {
                       setFilters((prev) => {
@@ -410,7 +410,7 @@ export const FilterPopUp: React.FC<{
                     disabled={inputDisabled(filterObj.filterKey)}
                   />
                   <div
-                    className="flex h-[30px] cursor-pointer items-center border p-1 hover:bg-[#f2f2f2]"
+                    className="flex h-[30px] cursor-pointer items-center border-y-[1px] border-r-[1px] p-1 px-2 rounded-r-sm hover:bg-[#f2f2f2]"
                     onClick={() => {
                       setFilters((prev) => {
                         const filteredFilterState = prev.filter(
