@@ -48,7 +48,7 @@ import cuid from "cuid";
 
 const BaseLayout = (props: PropsWithChildren) => {
   return (
-    <div className="flex h-[95px] w-auto cursor-pointer flex-col gap-2 rounded-lg border-2 bg-white hover:shadow-md">
+    <div className="flex h-auto w-[336px] cursor-pointer flex-col gap-1 rounded-lg border-2 bg-white p-4 hover:shadow-md">
       {props.children}
     </div>
   );
@@ -92,11 +92,11 @@ export default function Home() {
   return (
     <>
       <main className="relative flex h-screen w-screen flex-col overflow-x-hidden">
-        <div className="fixed left-0 right-0 top-0 flex h-[56px] flex-row items-center justify-between border-b py-2 shadow-sm">
+        <div className="fixed left-0 right-0 top-0 flex h-[56px] flex-row items-center justify-between border-b py-2 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]">
           <div className="ml-3 flex flex-row items-center gap-4">
             <div
               id="hamburg-menu-container"
-              className="cursor-pointer opacity-80 hover:opacity-95"
+              className="cursor-pointer opacity-30 hover:opacity-60"
             >
               <LuMenu size={20} />
             </div>
@@ -106,12 +106,12 @@ export default function Home() {
               className="h-[28px] w-[108px]"
             />
           </div>
-          <div className="flex flex-row items-center gap-2 rounded-full border-2 py-1 pl-3 pr-16 hover:cursor-pointer hover:shadow-md">
+          <div className="flex w-[354px] flex-row items-center gap-2 rounded-full border-2 border-gray-300 border-opacity-50 px-4 py-[6px] hover:cursor-pointer hover:shadow-md">
             <div className="">
-              <HiMagnifyingGlass size={15} />
+              <HiMagnifyingGlass size={17} />
             </div>
             <input
-              className="bg-transparent outline-none placeholder:text-[12px] hover:cursor-pointer"
+              className="bg-transparent outline-none placeholder:text-[13px] placeholder:text-gray-500 hover:cursor-pointer"
               placeholder="Search..."
             />
           </div>
@@ -258,59 +258,60 @@ export default function Home() {
             </div>
           </div>
           <div className="w-[47px]"></div>
-          <div className="flex w-full flex-col gap-7 bg-[#f8fafb] px-11">
-            <span className="pt-7 text-[27px] font-[675]">Home</span>
+          <div className="flex w-full flex-col gap-7 bg-[#f8fafb] px-[3rem] pt-[1.5rem]">
+            <h1 className="m-0 scale-y-110 text-[27px] font-[675]">Home</h1>
             <div className="grid justify-start gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
               <BaseLayout>
-                <div className="flex flex-row items-center gap-2 px-3 pt-3">
+                <div className="flex flex-row items-center gap-2">
                   <div id="icon-container">
                     <PiStarFour size={18} className="text-[#DD04A8]" />
                   </div>
-                  <span className="text-sm font-semibold">Start with AI</span>
+                  <span className="text-[15px] font-[550] text-[#1D1F25]">
+                    Start with AI
+                  </span>
                 </div>
-                <span className="px-3 pb-3 text-[13px] text-gray-500">
+                <span className="text-[13px] text-gray-500">
                   Turn your process into an app with data and interfaces using
                   AI.
                 </span>
               </BaseLayout>
               <BaseLayout>
-                <div className="flex flex-row items-center gap-2 px-3 pt-3">
+                <div className="flex flex-row items-center gap-2">
                   <div id="icon-container">
-                    <PiGridFourLight size={20} className="text-[#63498D]" />
+                    <PiGridFourLight size={21} className="text-[#63498D]" />
                   </div>
-                  <span className="text-sm font-semibold">
+                  <span className="text-[15px] font-[550] text-[#1D1F25]">
                     Start with templates
                   </span>
                 </div>
-                <span className="px-3 pb-3 text-[13px] text-gray-500">
-                  Turn your process into an app with data and interfaces using
-                  AI.
+                <span className="text-[13px] text-gray-500">
+                  Select a template to get started and customize as you go.
                 </span>
               </BaseLayout>
               <BaseLayout>
-                <div className="flex flex-row items-center gap-2 px-3 pt-3">
+                <div className="flex flex-row items-center gap-2">
                   <div id="icon-container">
-                    <GoArrowUp size={20} className="text-[#0D7F78]" />
+                    <GoArrowUp size={21} className="text-[#0D7F78]" />
                   </div>
-                  <span className="text-sm font-semibold">Quickly upload</span>
+                  <span className="text-[15px] font-[550] text-[#1D1F25]">
+                    Quickly upload
+                  </span>
                 </div>
-                <span className="px-3 pb-3 text-[13px] text-gray-500">
-                  Turn your process into an app with data and interfaces using
-                  AI.
+                <span className="text-[13px] text-gray-500">
+                  Easily migrate your existing projects in just a few minutes.
                 </span>
               </BaseLayout>
               <BaseLayout>
-                <div className="flex flex-row items-center gap-2 px-3 pt-3">
+                <div className="flex flex-row items-center gap-2">
                   <div id="icon-container">
-                    <PiTableLight size={20} className="text-[#3B66A3]" />
+                    <PiTableLight size={21} className="text-[#3B66A3]" />
                   </div>
-                  <span className="text-sm font-semibold">
+                  <span className="text-[15px] font-[550] text-[#1D1F25]">
                     Start from scratch
                   </span>
                 </div>
-                <span className="px-3 pb-3 text-[13px] text-gray-500">
-                  Turn your process into an app with data and interfaces using
-                  AI.
+                <span className="text-[13px] text-gray-500">
+                  Create a new blank base with custom tables, fields, and views.
                 </span>
               </BaseLayout>
             </div>

@@ -143,8 +143,8 @@ export const rowRouter = createTRPCRouter({
               name: col.name,
             },
             [cellValue]: {
-              contains: input.searchTerm,
-              mode: "insensitive"
+              contains: input.searchTerm.trim(),
+              mode: "insensitive",
             },
           };
         }
@@ -205,8 +205,8 @@ export const rowRouter = createTRPCRouter({
             filter.columnType === "text" ? "stringValue" : "intValue";
           const filterValue =
             filter.columnType === "text"
-              ? filter.value
-              : Number(filter.value ?? "");
+              ? filter.value?.trim()
+              : Number(filter.value?.trim() ?? "");
 
           const positiveFilter = {
             cells: {
@@ -249,8 +249,8 @@ export const rowRouter = createTRPCRouter({
             filter.columnType === "text" ? "stringValue" : "intValue";
           const filterValue =
             filter.columnType === "text"
-              ? filter.value
-              : Number(filter.value ?? "");
+              ? filter.value?.trim()
+              : Number(filter.value?.trim() ?? "");
 
           const positiveFilter = {
             cells: {
@@ -292,8 +292,8 @@ export const rowRouter = createTRPCRouter({
             filter.columnType === "text" ? "stringValue" : "intValue";
           const filterValue =
             filter.columnType === "text"
-              ? filter.value
-              : Number(filter.value ?? "");
+              ? filter.value?.trim()
+              : Number(filter.value?.trim() ?? "");
 
           const positiveFilter = {
             cells: {
@@ -407,7 +407,7 @@ export const rowRouter = createTRPCRouter({
           return (a: (typeof rows)[number], b: (typeof rows)[number]) => {
             const sorterValue =
               sorter.type === "text" ? "stringValue" : "intValue";
-            
+
             // Find the cells to compare
             const cellA = a.cells.find(
               (cell) => cell.column.name === sorter.field,
@@ -433,7 +433,7 @@ export const rowRouter = createTRPCRouter({
                 : valueB.localeCompare(valueA);
             }
 
-            return 0; 
+            return 0;
           };
         });
         const combinedComparator = combineComparisonFunctions(compareFunctions);
@@ -446,5 +446,4 @@ export const rowRouter = createTRPCRouter({
         totalCount,
       };
     }),
-  
 });

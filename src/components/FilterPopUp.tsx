@@ -315,7 +315,7 @@ export const FilterPopUp: React.FC<{
       }}
     >
       <div
-        className={`fixed z-20 flex h-auto flex-col rounded-md border bg-white px-2 shadow-lg ${filters.length > 0 ? "w-[590px]" : "w-[300px]"}`}
+        className={`fixed z-20 flex h-auto flex-col rounded-md border bg-white px-2 shadow-lg ${filters.length > 0 ? "w-[590px]" : "w-auto"}`}
         style={{ left: `${x}px`, top: `${y}px` }}
       >
         <div className="m-3 flex flex-col gap-4 text-[13px]">
