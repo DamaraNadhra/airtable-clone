@@ -811,7 +811,7 @@ const ViewLayout: NextPage = () => {
                 />
               ))}
               <button
-                className="flex flex-row items-center gap-2 px-2 text-slate-300 hover:text-slate-200"
+                className="something flex flex-row items-center gap-2 px-2 text-slate-300 hover:text-slate-200"
                 onClick={() => {
                   const uniqueCUID = cuid();
                   const uniqueCUID2 = cuid();
@@ -1295,7 +1295,7 @@ const ViewLayout: NextPage = () => {
                     })}
                   </Box>
                   <div
-                    className="flex h-[32px] cursor-pointer border-r-[1px] border-b-[1px] border-black border-opacity-10 bg-white text-black hover:bg-[#f2f2f2]"
+                    className="flex h-[32px] cursor-pointer border-b-[1px] border-r-[1px] border-black border-opacity-10 bg-white text-black hover:bg-[#f2f2f2]"
                     style={{
                       width: table.getTotalSize() + 56,
                     }}
