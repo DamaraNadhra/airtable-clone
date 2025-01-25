@@ -945,7 +945,7 @@ const ViewLayout: NextPage = () => {
                     <div className="delay-[35ms] something flex cursor-pointer items-center justify-normal rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors hover:bg-[#f2f2f2]">
                       <RxRows size={13} />
                     </div>
-                    <div className="delay-[35ms] flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors hover:bg-[#f2f2f2]">
+                    <div className="delay-[35ms] somethingisgoingon flex cursor-pointer flex-row items-center justify-normal gap-1 rounded-sm px-2 py-1 text-[13px] text-gray-800 transition-colors hover:bg-[#f2f2f2]">
                       <PiArrowSquareOut size={15} />
                       <span>Share and sync</span>
                     </div>
